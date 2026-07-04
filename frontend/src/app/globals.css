@@ -1,0 +1,55 @@
+@import "tailwindcss";
+
+:root {
+  --background: #F5F7FA;
+  --foreground: #111827;
+  --sidebar-bg: #ffffff;
+  --primary-teal: #00637C;
+  --primary-teal-hover: #004d60;
+  --light-teal: #e0f2f6;
+  --border-color: #E2E8F0;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-sidebar: var(--sidebar-bg);
+  --color-teal-primary: var(--primary-teal);
+  --color-teal-hover: var(--primary-teal-hover);
+  --color-teal-light: var(--light-teal);
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+}
+
+@layer utilities {
+  .animate-fade-in {
+    animation: fadeIn 0.2s ease-out forwards;
+  }
+  .animate-slide-in {
+    animation: slideIn 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes slideIn {
+  from {
+    transform: translateX(100%);
+  }
+  to {
+    transform: translateX(0);
+  }
+}
