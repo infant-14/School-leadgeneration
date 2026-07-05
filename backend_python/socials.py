@@ -7,11 +7,11 @@ from bs4 import BeautifulSoup
 
 logger = logging.getLogger(__name__)
 
-def evaluate_social_media_status(website_url: str, school_name: str, area: str) -> str:
+def evaluate_social_media_status(website_url: str, school_name: str, area: str) -> tuple:
     """
     Orchestrates finding social media links and checking if any are active.
     Uses a single, optimized Playwright browser session to minimize startup overhead.
-    Returns 'Active' or 'Inactive'.
+    Returns a tuple of (status_str, remark_str).
     """
     social_urls = {"facebook": "", "instagram": "", "linkedin": ""}
     is_active = False
@@ -180,4 +180,27 @@ def evaluate_social_media_status(website_url: str, school_name: str, area: str) 
     except Exception as outer_err:
         logger.error(f"Outer error in social scan orchestration: {outer_err}")
         
-    return "Active" if is_active else "Inactive"
+    # Check if we have at least one valid custom profile link
+    has_valid_profile = False
+    for platform, url in social_urls.items():
+        if url:
+            cleaned = url.strip().rstrip('/')
+            domain_only = False
+            for dom in ["facebook.com", "instagram.com", "linkedin.com", "twitter.com", "youtube.com"]:
+                if cleaned.lower() in [f"http://{dom}", f"https://{dom}", f"http://www.{dom}", f"https://www.{dom}"]:
+                    domain_only = True
+                    break
+            if not domain_only:
+                has_valid_profile = True
+                
+    if has_valid_profile:
+        status_str = "Active"
+        if is_active:
+            remark_str = ""
+        else:
+            remark_str = "Social accounts present but no recent updates found."
+    else:
+        status_str = "Inactive"
+        remark_str = ""
+        
+    return status_str, remark_str

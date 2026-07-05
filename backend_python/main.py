@@ -86,33 +86,25 @@ def run_lead_pipeline(area: str, school_type: str, limit: int, output_file: str 
         
         enriched_leads = []
         
-        # Helper function for parallel enrichment of a single lead
-        def enrich_single_lead(idx, lead):
+        # 2. Enrich leads using classifier and social checker
+        for idx, lead in enumerate(raw_leads, 1):
             school_name = lead["school_name"]
             website_url = lead["website_url"]
+            contact_number = lead["contact_number"]
             rating = lead["google_rating"]
             photo_url = lead["photo_url"]
             address = lead.get("address", "")
             
+            logger.info("-" * 50)
+            logger.info(f"Enriching Lead {idx}/{len(raw_leads)}: {school_name}")
+            
             # Skip leads that are not in or immediately near/adjacent to the target area
             if not is_location_near_area(address, area):
                 logger.warning(f"Skipping lead '{school_name}' because address '{address}' is not located in or near the search area '{area}'")
-                return None
+                continue
             
             # A. Classify Institution Type
             inst_type = classify_institution_type(school_name)
-            
-            # Filter by school type if the search query is specific
-            school_type_lower = school_type.lower()
-            if "matric" in school_type_lower and inst_type.lower() != "matriculation":
-                logger.warning(f"Skipping lead '{school_name}' because classified type '{inst_type}' does not match target 'Matriculation'")
-                return None
-            elif "cbse" in school_type_lower and inst_type.lower() != "cbse":
-                logger.warning(f"Skipping lead '{school_name}' because classified type '{inst_type}' does not match target 'CBSE'")
-                return None
-            elif ("international" in school_type_lower or "intl" in school_type_lower) and inst_type.lower() != "international":
-                logger.warning(f"Skipping lead '{school_name}' because classified type '{inst_type}' does not match target 'International'")
-                return None
             
             # B. Audit Website Appearance & Remarks
             appearance, remarks, website_text = evaluate_website_screenshot(website_url)
@@ -131,10 +123,7 @@ def run_lead_pipeline(area: str, school_type: str, limit: int, output_file: str 
             # D. Check Social Media Activity
             social_status = evaluate_social_media_status(website_url, school_name, area)
             
-            logger.info(f"Finished Enriching '{school_name}': Type={inst_type}, Web={appearance}, Atmosphere={atmosphere}, Social={social_status}")
-            
-            return {
-                "_sort_idx": idx,
+            enriched_lead = {
                 "school_name": school_name,
                 "website_url": website_url,
                 "contact_number": info["contact_number"],
@@ -148,26 +137,9 @@ def run_lead_pipeline(area: str, school_type: str, limit: int, output_file: str 
                 "google_rating": rating,
                 "photo_url": photo_url
             }
-
-        # 2. Enrich leads using classifier and social checker in parallel
-        from concurrent.futures import ThreadPoolExecutor, as_completed
-        
-        max_workers = min(4, len(raw_leads)) if raw_leads else 1
-        logger.info(f"Starting parallel enrichment with {max_workers} threads...")
-        
-        with ThreadPoolExecutor(max_workers=max_workers) as executor:
-            futures = {executor.submit(enrich_single_lead, idx, lead): lead for idx, lead in enumerate(raw_leads, 1)}
-            for future in as_completed(futures):
-                try:
-                    result = future.result()
-                    if result:
-                        enriched_leads.append(result)
-                except Exception as exc:
-                    lead_name = futures[future].get("school_name", "Unknown")
-                    logger.error(f"Enrichment task for '{lead_name}' generated an exception: {exc}", exc_info=True)
-                    
-        # Sort back to preserve the original order of the leads
-        enriched_leads.sort(key=lambda x: x.pop("_sort_idx", 0))
+            
+            logger.info(f"Lead Status: Type={inst_type}, Web={appearance}, Atmosphere={atmosphere}, Social={social_status}")
+            enriched_leads.append(enriched_lead)
             
         # 3. Export data to Excel
         logger.info("=" * 60)

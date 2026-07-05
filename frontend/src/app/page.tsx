@@ -315,6 +315,7 @@ export default function LeadGenWorkspace() {
   const wsRef = useRef<WebSocket | null>(null);
   const consoleEndRef = useRef<HTMLDivElement | null>(null);
 
+  // const API_BASE = process.env.NEXT_PUBLIC_API_BASE || "https://jlglzg4d-8080.inc1.devtunnels.ms/";
   const API_BASE = process.env.NEXT_PUBLIC_API_BASE || "http://localhost:8080/api";
 
   // Fetch leads on mount and whenever tab changes
