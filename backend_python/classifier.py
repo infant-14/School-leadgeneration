@@ -72,7 +72,7 @@ def query_ollama(prompt: str, model_name: str, image_bytes: bytes = None, is_jso
         logger.error(f"Error querying Ollama model '{model_name}': {e}")
     return ""
 
-def _fallback_classify_institution_type(school_name: str) -> str:
+def _fallback_classify_institution_type(school_name: str, target_type: str = "Matriculation") -> str:
     # Fallback keyword matching
     name_lower = school_name.lower()
     if "cbse" in name_lower or "central" in name_lower:
@@ -81,15 +81,31 @@ def _fallback_classify_institution_type(school_name: str) -> str:
         return "International"
     elif "matric" in name_lower or "matriculation" in name_lower:
         return "Matriculation"
-    return "Matriculation"  # Default fallback based on search context
+    
+    # Default to the target type instead of hardcoding "Matriculation"
+    tgt_clean = target_type.lower()
+    if "cbse" in tgt_clean:
+        return "CBSE"
+    elif "international" in tgt_clean:
+        return "International"
+    return "Matriculation"
 
-def classify_institution_type(school_name: str) -> str:
+def classify_institution_type(school_name: str, target_type: str = "Matriculation") -> str:
     """
     Classifies the institution type (e.g. CBSE, Matriculation, International)
     based on the school name.
     """
+    # Fast path keyword matching (100% accurate, no API call needed)
+    name_lower = school_name.lower()
+    if "matriculation" in name_lower or "matric" in name_lower:
+        return "Matriculation"
+    elif "cbse" in name_lower or "central board" in name_lower:
+        return "CBSE"
+    elif "international" in name_lower or "global school" in name_lower:
+        return "International"
+
     if ai_provider == "none":
-        return _fallback_classify_institution_type(school_name)
+        return _fallback_classify_institution_type(school_name, target_type)
 
     prompt = (
         f"Classify the institution type of '{school_name}' based on its name. "
@@ -99,7 +115,7 @@ def classify_institution_type(school_name: str) -> str:
 
     if ai_provider == "gemini":
         if not api_key:
-            return _fallback_classify_institution_type(school_name)
+            return _fallback_classify_institution_type(school_name, target_type)
         try:
             model = get_gemini_model()
             response = model.generate_content(prompt)
@@ -108,7 +124,7 @@ def classify_institution_type(school_name: str) -> str:
             return result
         except Exception as e:
             logger.error(f"Error classifying institution type via Gemini: {e}")
-            return _fallback_classify_institution_type(school_name)
+            return _fallback_classify_institution_type(school_name, target_type)
             
     elif ai_provider == "ollama":
         model_name = os.getenv("OLLAMA_MODEL", "llama3.2")
@@ -123,12 +139,12 @@ def classify_institution_type(school_name: str) -> str:
                         return cat
                 logger.info(f"Ollama classified type for '{school_name}': {cleaned}")
                 return cleaned
-            return _fallback_classify_institution_type(school_name)
+            return _fallback_classify_institution_type(school_name, target_type)
         except Exception as e:
             logger.error(f"Error classifying institution type via Ollama: {e}")
-            return _fallback_classify_institution_type(school_name)
+            return _fallback_classify_institution_type(school_name, target_type)
 
-    return _fallback_classify_institution_type(school_name)
+    return _fallback_classify_institution_type(school_name, target_type)
 
 def extract_area_from_address(address: str, default_area: str) -> str:
     if not address:
@@ -425,25 +441,47 @@ def evaluate_institution_atmosphere(photo_url: str, rating: str = "") -> str:
     return _fallback_atmosphere_rating(rating)
 
 
+def get_neighboring_suburbs(area: str) -> list:
+    """
+    Returns a list of known adjacent/neighboring suburbs for key target areas
+    in Chennai and Trichy to guarantee they are never skipped.
+    """
+    area_clean = area.strip().lower()
+    
+    # Trichy region mapping
+    if "srirangam" in area_clean:
+        return ["srirangam", "thiruvanaikoil", "thiruvanai kovil", "thiruvanai", "koothur", "woraiyur", "chathiram", "chatram"]
+    elif "thiruvanaikoil" in area_clean or "thiruvanai kovil" in area_clean:
+        return ["thiruvanaikoil", "thiruvanai kovil", "srirangam", "koothur"]
+    
+    # Chennai regions
+    elif "medavakkam" in area_clean:
+        return ["medavakkam", "pallikaranai", "kovilambakkam", "nanmangalam", "santhosapuram", "perumbakkam", "vengaivasal", "vengavasal", "selaiyur", "sholinganallur", "semmancheri"]
+    elif "tambaram" in area_clean:
+        return ["tambaram", "chromepet", "selaiyur", "chitlapakkam", "irumbuliyur", "mudichur", "peerkankaranai", "perungalathur", "sanatorium", "pallavaram", "vandalur"]
+    elif "adyar" in area_clean:
+        return ["adyar", "thiruvanmiyur", "besant nagar", "ra puram", "mylapore", "velachery", "kotturpuram", "guindy"]
+    elif "sholinganallur" in area_clean:
+        return ["sholinganallur", "perumbakkam", "semmancheri", "navalur", "karapakkam", "okkiyam", "thoraipakkam", "medavakkam"]
+        
+    return [area_clean]
+
+
 def is_location_near_area(address: str, search_area: str) -> bool:
     """
     Uses Gemini/Ollama to determine if the school address is located in or immediately
     adjacent to the searched area. If AI is disabled, uses a simple substring check.
     """
-    if not address:
+    if not address or address.strip().lower() in ["n/a", "none", "null"]:
         return True # Default to keep if no address found
         
-    # Standard clean search area check
-    clean_area = search_area.strip().lower()
-    
-    # If the search area is directly mentioned in the address, it is definitely in/near!
-    if clean_area in address.lower():
+    # If the search area or any of its known neighboring suburbs are in the address, it is near!
+    neighbors = get_neighboring_suburbs(search_area)
+    address_lower = address.lower()
+    if any(n in address_lower for n in neighbors):
         return True
         
     if ai_provider == "none":
-        # Fallback substring check (simple heuristic)
-        # If the search area is in the address, it was already caught.
-        # Otherwise, since we don't have AI, we keep it to avoid false negatives.
         return True
         
     prompt = (

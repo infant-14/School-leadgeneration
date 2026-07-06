@@ -98,16 +98,57 @@ def run_lead_pipeline(area: str, school_type: str, limit: int, output_file: str 
             logger.info("-" * 50)
             logger.info(f"Enriching Lead {idx}/{len(raw_leads)}: {school_name}")
             
-            # Skip leads that are not in or immediately near/adjacent to the target area
-            if not is_location_near_area(address, area):
-                logger.warning(f"Skipping lead '{school_name}' because address '{address}' is not located in or near the search area '{area}'")
-                continue
+            # 1. Smart Location Adjacency Filtering
+            # If the address is missing (N/A), keep it.
+            # Otherwise, ask is_location_near_area if it is adjacent. If no, we skip/continue.
+            address_clean = address.strip().lower()
+            if not address_clean or address_clean in ["n/a", "none", "null"]:
+                # Keep if address is missing
+                pass
+            else:
+                if not is_location_near_area(address, area):
+                    logger.warning(f"Skipping lead '{school_name}' because address '{address}' is not located in or near the search area '{area}'")
+                    continue
             
             # A. Classify Institution Type
-            inst_type = classify_institution_type(school_name)
+            inst_type = classify_institution_type(school_name, school_type)
+            
+            # 2. Smart Board Type Filtering (First-tier check based on name)
+            school_type_lower = school_type.lower()
+            if "matric" in school_type_lower and inst_type.lower() in ["cbse", "international"]:
+                logger.warning(f"Skipping lead '{school_name}' because classified type '{inst_type}' does not match target 'Matriculation'")
+                continue
+            elif "cbse" in school_type_lower and inst_type.lower() in ["matriculation", "international"]:
+                logger.warning(f"Skipping lead '{school_name}' because classified type '{inst_type}' does not match target 'CBSE'")
+                continue
+            elif ("international" in school_type_lower or "intl" in school_type_lower) and inst_type.lower() in ["matriculation", "cbse"]:
+                logger.warning(f"Skipping lead '{school_name}' because classified type '{inst_type}' does not match target 'International'")
+                continue
             
             # B. Audit Website Appearance & Remarks
             appearance, remarks, website_text = evaluate_website_screenshot(website_url)
+            
+            # Refine type based on website text keywords if name-based classification was ambiguous
+            if inst_type.lower() not in ["cbse", "matriculation", "international"] or inst_type == "Other":
+                if website_text:
+                    web_lower = website_text.lower()
+                    if "cbse" in web_lower or "central board" in web_lower:
+                        inst_type = "CBSE"
+                    elif "matriculation" in web_lower or "matric" in web_lower:
+                        inst_type = "Matriculation"
+                    elif "international" in web_lower or "global school" in web_lower:
+                        inst_type = "International"
+                        
+            # Re-verify board type filter skips after website text refinement
+            if "matric" in school_type_lower and inst_type.lower() in ["cbse", "international"]:
+                logger.warning(f"Skipping lead '{school_name}' because refined type '{inst_type}' does not match target 'Matriculation'")
+                continue
+            elif "cbse" in school_type_lower and inst_type.lower() in ["matriculation", "international"]:
+                logger.warning(f"Skipping lead '{school_name}' because refined type '{inst_type}' does not match target 'CBSE'")
+                continue
+            elif ("international" in school_type_lower or "intl" in school_type_lower) and inst_type.lower() in ["matriculation", "cbse"]:
+                logger.warning(f"Skipping lead '{school_name}' because refined type '{inst_type}' does not match target 'International'")
+                continue
             
             # Extract contact details & specific area name from website text, falling back to Google Maps details
             info = extract_info_from_website_text(
@@ -121,7 +162,9 @@ def run_lead_pipeline(area: str, school_type: str, limit: int, output_file: str 
             atmosphere = evaluate_institution_atmosphere(photo_url, rating)
             
             # D. Check Social Media Activity
-            social_status = evaluate_social_media_status(website_url, school_name, area)
+            social_status, social_remark = evaluate_social_media_status(website_url, school_name, area)
+            if social_remark:
+                remarks = f"{remarks} | {social_remark}" if remarks else social_remark
             
             enriched_lead = {
                 "school_name": school_name,
