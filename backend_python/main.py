@@ -32,7 +32,7 @@ from classifier import (
 from socials import evaluate_social_media_status
 from sheets import save_leads_to_excel, sync_to_google_sheets
 
-def run_lead_pipeline(area: str, school_type: str, limit: int, output_file: str = None, log_callback: callable = None) -> list:
+def run_lead_pipeline(area: str, school_type: str, limit: int, output_file: str = None, log_callback: callable = None, existing_file: str = "") -> list:
     """
     Runs the automated school lead generation pipeline programmatically.
     Optionally accepts a log_callback to capture all log messages in real-time.
@@ -75,15 +75,24 @@ def run_lead_pipeline(area: str, school_type: str, limit: int, output_file: str 
         logger.info("=" * 60)
         
         # 1. Scrape basic info from Google Maps
-        max_results = limit if limit > 0 else 10000
+        max_results = limit if limit > 0 else 30
         raw_leads = scrape_google_maps_leads(area, school_type, max_results=max_results)
         
         if not raw_leads:
             logger.error("No leads were found or scraped. Exiting.")
             return []
             
-        logger.info(f"Scraped {len(raw_leads)} raw leads. Commencing lead enrichment...")
-        
+        # Load existing leads names to skip
+        import json
+        existing_names = []
+        if existing_file and os.path.exists(existing_file):
+            try:
+                with open(existing_file, "r", encoding="utf-8") as f:
+                    existing_names = json.load(f)
+                logger.info(f"Loaded {len(existing_names)} existing school names to skip.")
+            except Exception as e:
+                logger.error(f"Error loading existing-file: {e}")
+
         enriched_leads = []
         
         # 2. Enrich leads using classifier and social checker
@@ -95,35 +104,39 @@ def run_lead_pipeline(area: str, school_type: str, limit: int, output_file: str 
             photo_url = lead["photo_url"]
             address = lead.get("address", "")
             
+            # Skip if already exists in database
+            school_name_clean = school_name.lower().strip()
+            if school_name_clean in existing_names:
+                logger.info(f"Lead '{school_name}' already exists in database. Skipping details enrichment.")
+                continue
+
             logger.info("-" * 50)
             logger.info(f"Enriching Lead {idx}/{len(raw_leads)}: {school_name}")
             
-            # 1. Smart Location Adjacency Filtering
-            # If the address is missing (N/A), keep it.
-            # Otherwise, ask is_location_near_area if it is adjacent. If no, we skip/continue.
-            address_clean = address.strip().lower()
-            if not address_clean or address_clean in ["n/a", "none", "null"]:
-                # Keep if address is missing
-                pass
-            else:
-                if not is_location_near_area(address, area):
-                    logger.warning(f"Skipping lead '{school_name}' because address '{address}' is not located in or near the search area '{area}'")
-                    continue
+            # 1. Smart Location Adjacency Filtering (DISABLED per client request)
+            # address_clean = address.strip().lower()
+            # if not address_clean or address_clean in ["n/a", "none", "null"]:
+            #     # Keep if address is missing
+            #     pass
+            # else:
+            #     if not is_location_near_area(address, area):
+            #         logger.warning(f"Skipping lead '{school_name}' because address '{address}' is not located in or near the search area '{area}'")
+            #         continue
             
             # A. Classify Institution Type
             inst_type = classify_institution_type(school_name, school_type)
             
-            # 2. Smart Board Type Filtering (First-tier check based on name)
+            # 2. Smart Board Type Filtering (DISABLED per client request)
             school_type_lower = school_type.lower()
-            if "matric" in school_type_lower and inst_type.lower() in ["cbse", "international"]:
-                logger.warning(f"Skipping lead '{school_name}' because classified type '{inst_type}' does not match target 'Matriculation'")
-                continue
-            elif "cbse" in school_type_lower and inst_type.lower() in ["matriculation", "international"]:
-                logger.warning(f"Skipping lead '{school_name}' because classified type '{inst_type}' does not match target 'CBSE'")
-                continue
-            elif ("international" in school_type_lower or "intl" in school_type_lower) and inst_type.lower() in ["matriculation", "cbse"]:
-                logger.warning(f"Skipping lead '{school_name}' because classified type '{inst_type}' does not match target 'International'")
-                continue
+            # if "matric" in school_type_lower and inst_type.lower() in ["cbse", "international"]:
+            #     logger.warning(f"Skipping lead '{school_name}' because classified type '{inst_type}' does not match target 'Matriculation'")
+            #     continue
+            # elif "cbse" in school_type_lower and inst_type.lower() in ["matriculation", "international"]:
+            #     logger.warning(f"Skipping lead '{school_name}' because classified type '{inst_type}' does not match target 'CBSE'")
+            #     continue
+            # elif ("international" in school_type_lower or "intl" in school_type_lower) and inst_type.lower() in ["matriculation", "cbse"]:
+            #     logger.warning(f"Skipping lead '{school_name}' because classified type '{inst_type}' does not match target 'International'")
+            #     continue
             
             # B. Audit Website Appearance & Remarks
             appearance, remarks, website_text = evaluate_website_screenshot(website_url)
@@ -139,16 +152,16 @@ def run_lead_pipeline(area: str, school_type: str, limit: int, output_file: str 
                     elif "international" in web_lower or "global school" in web_lower:
                         inst_type = "International"
                         
-            # Re-verify board type filter skips after website text refinement
-            if "matric" in school_type_lower and inst_type.lower() in ["cbse", "international"]:
-                logger.warning(f"Skipping lead '{school_name}' because refined type '{inst_type}' does not match target 'Matriculation'")
-                continue
-            elif "cbse" in school_type_lower and inst_type.lower() in ["matriculation", "international"]:
-                logger.warning(f"Skipping lead '{school_name}' because refined type '{inst_type}' does not match target 'CBSE'")
-                continue
-            elif ("international" in school_type_lower or "intl" in school_type_lower) and inst_type.lower() in ["matriculation", "cbse"]:
-                logger.warning(f"Skipping lead '{school_name}' because refined type '{inst_type}' does not match target 'International'")
-                continue
+            # Re-verify board type filter skips after website text refinement (DISABLED per client request)
+            # if "matric" in school_type_lower and inst_type.lower() in ["cbse", "international"]:
+            #     logger.warning(f"Skipping lead '{school_name}' because refined type '{inst_type}' does not match target 'Matriculation'")
+            #     continue
+            # elif "cbse" in school_type_lower and inst_type.lower() in ["matriculation", "international"]:
+            #     logger.warning(f"Skipping lead '{school_name}' because refined type '{inst_type}' does not match target 'CBSE'")
+            #     continue
+            # elif ("international" in school_type_lower or "intl" in school_type_lower) and inst_type.lower() in ["matriculation", "cbse"]:
+            #     logger.warning(f"Skipping lead '{school_name}' because refined type '{inst_type}' does not match target 'International'")
+            #     continue
             
             # Extract contact details & specific area name from website text, falling back to Google Maps details
             info = extract_info_from_website_text(
@@ -217,6 +230,7 @@ def main():
     parser.add_argument("--type", type=str, default="matriculation schools", help="Type of school (e.g. matriculation schools)")
     parser.add_argument("--limit", type=int, default=0, help="Maximum number of leads to fetch (0 for unlimited)")
     parser.add_argument("--output", type=str, default="", help="Output Excel file path (optional)")
+    parser.add_argument("--existing-file", type=str, default="", help="Path to JSON file containing existing school names to skip")
     
     args = parser.parse_args()
     
@@ -224,7 +238,8 @@ def main():
         area=args.area,
         school_type=args.type,
         limit=args.limit,
-        output_file=args.output
+        output_file=args.output,
+        existing_file=args.existing_file
     )
 
 if __name__ == "__main__":
