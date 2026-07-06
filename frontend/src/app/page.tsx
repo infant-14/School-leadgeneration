@@ -265,6 +265,8 @@ export default function LeadGenWorkspace() {
   // Scraper inputs
   const [areaInput, setAreaInput] = useState("");
   const [typeInput, setTypeInput] = useState("");
+  const [limitInput, setLimitInput] = useState(30);
+  const [isScanDepthOpen, setIsScanDepthOpen] = useState(false);
 
   // Stepper & Progress State
   const [currentStep, setCurrentStep] = useState(1);
@@ -302,6 +304,14 @@ export default function LeadGenWorkspace() {
   const [loginPassword, setLoginPassword] = useState("");
   const [loginError, setLoginError] = useState("");
   const [loginLoading, setLoginLoading] = useState(false);
+  // Signup Form States
+  const [isSignupMode, setIsSignupMode] = useState(false);
+  const [signupUsername, setSignupUsername] = useState("");
+  const [signupPassword, setSignupPassword] = useState("");
+  const [signupEmail, setSignupEmail] = useState("");
+  const [signupName, setSignupName] = useState("");
+  const [signupLoading, setSignupLoading] = useState(false);
+  const [signupSuccess, setSignupSuccess] = useState("");
   // Config State
   const [geminiKey, setGeminiKey] = useState("");
   const [sheetId, setSheetId] = useState("");
@@ -331,6 +341,34 @@ export default function LeadGenWorkspace() {
     }
   }, [logs]);
 
+  // Fail-safe scraper status polling to prevent UI hangs on missed WebSocket events
+  useEffect(() => {
+    let intervalId: any;
+    if (isSearching) {
+      intervalId = setInterval(async () => {
+        try {
+          const res = await fetch(`${API_BASE}/scrape/status`, {
+            headers: {
+              "Authorization": `Bearer ${localStorage.getItem("userToken") || ""}`
+            }
+          });
+          if (res.ok) {
+            const data = await res.json();
+            if (data && data.is_running === false) {
+              setIsSearching(false);
+              fetchLeadsList();
+            }
+          }
+        } catch (e) {
+          console.log("Error polling status:", e);
+        }
+      }, 3000);
+    }
+    return () => {
+      if (intervalId) clearInterval(intervalId);
+    };
+  }, [isSearching]);
+
   const handleAddLeadSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newSchoolName || !newLocation) {
@@ -342,7 +380,8 @@ export default function LeadGenWorkspace() {
       const res = await fetch(`${API_BASE}/leads`, {
         method: "POST",
         headers: {
-          "Content-Type": "application/json"
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${localStorage.getItem("userToken") || ""}`
         },
         body: JSON.stringify({
           school_name: newSchoolName,
@@ -380,13 +419,15 @@ export default function LeadGenWorkspace() {
 
   const fetchLeadsList = async () => {
     try {
-      const res = await fetch(`${API_BASE}/leads`);
+      const res = await fetch(`${API_BASE}/leads`, {
+        headers: {
+          "Authorization": `Bearer ${localStorage.getItem("userToken") || ""}`
+        }
+      });
       if (res.ok) {
         const data = await res.json();
-        if (data && data.length > 0) {
-          setLeads(data);
-          return data;
-        }
+        setLeads(data || []);
+        return data || [];
       }
     } catch (e) {
       console.log("Backend not reachable. Falling back to offline mock mode.");
@@ -396,7 +437,11 @@ export default function LeadGenWorkspace() {
 
   const fetchConfig = async () => {
     try {
-      const res = await fetch(`${API_BASE}/config`);
+      const res = await fetch(`${API_BASE}/config`, {
+        headers: {
+          "Authorization": `Bearer ${localStorage.getItem("userToken") || ""}`
+        }
+      });
       if (res.ok) {
         const data = await res.json();
         setGeminiKey(data.gemini_api_key || "");
@@ -413,7 +458,11 @@ export default function LeadGenWorkspace() {
 
   const checkScrapeStatus = async () => {
     try {
-      const res = await fetch(`${API_BASE}/scrape/status`);
+      const res = await fetch(`${API_BASE}/scrape/status`, {
+        headers: {
+          "Authorization": `Bearer ${localStorage.getItem("userToken") || ""}`
+        }
+      });
       if (res.ok) {
         const data = await res.json();
         if (data.is_running) {
@@ -456,7 +505,7 @@ export default function LeadGenWorkspace() {
         setCurrentStep((prev) => Math.max(prev, 4));
       }
 
-      if (msg.includes("finished successfully!") || msg.includes("ERROR:")) {
+      if (msg.includes("finished successfully!") || msg.includes("SUCCESS:") || msg.includes("ERROR:")) {
         setIsSearching(false);
         setCurrentStep(4);
         setNotifications(prev => [
@@ -496,11 +545,14 @@ export default function LeadGenWorkspace() {
     try {
       const res = await fetch(`${API_BASE}/scrape`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { 
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${localStorage.getItem("userToken") || ""}`
+        },
         body: JSON.stringify({
           area: areaInput,
           school_type: typeInput,
-          limit: 0,
+          limit: limitInput,
         }),
       });
 
@@ -560,7 +612,10 @@ export default function LeadGenWorkspace() {
     try {
       await fetch(`${API_BASE}/leads/${leadId}/status`, {
         method: "PATCH",
-        headers: { "Content-Type": "application/json" },
+        headers: { 
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${localStorage.getItem("userToken") || ""}`
+        },
         body: JSON.stringify({ status: newStatus }),
       });
     } catch (e) {
@@ -574,6 +629,9 @@ export default function LeadGenWorkspace() {
     try {
       await fetch(`${API_BASE}/leads/${leadId}`, {
         method: "DELETE",
+        headers: {
+          "Authorization": `Bearer ${localStorage.getItem("userToken") || ""}`
+        }
       });
     } catch (e) {
       console.log("Deleted lead locally.");
@@ -587,6 +645,9 @@ export default function LeadGenWorkspace() {
     try {
       await fetch(`${API_BASE}/leads`, {
         method: "DELETE",
+        headers: {
+          "Authorization": `Bearer ${localStorage.getItem("userToken") || ""}`
+        }
       });
     } catch (e) {
       console.log("Deleted all leads locally.");
@@ -596,7 +657,10 @@ export default function LeadGenWorkspace() {
   const handleSyncSheets = async () => {
     try {
       const res = await fetch(`${API_BASE}/sync-sheets`, {
-        method: "POST"
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${localStorage.getItem("userToken") || ""}`
+        }
       });
       if (res.ok) {
         setNotifications(prev => [
@@ -685,6 +749,61 @@ export default function LeadGenWorkspace() {
     localStorage.removeItem("userToken");
     setIsAuthenticated(false);
     setIsProfileOpen(false);
+    setLeads([]);
+    setSelectedLead(null);
+    setActiveRunLeads([]);
+  };
+
+  const handleSignupSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!signupUsername || !signupPassword) {
+      setLoginError("Please enter both username and password for registration.");
+      return;
+    }
+    setSignupLoading(true);
+    setLoginError("");
+    setSignupSuccess("");
+
+    try {
+      const res = await fetch(`${API_BASE}/auth/signup`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          username: signupUsername,
+          password: signupPassword,
+          email: signupEmail || null,
+          name: signupName || null
+        })
+      });
+
+      if (!res.ok) {
+        const errData = await res.json();
+        throw new Error(errData.message || "Registration failed.");
+      }
+
+      setSignupSuccess("Signup successful! You can now log in.");
+      // Pre-fill login credentials for convenience
+      setLoginUsername(signupUsername);
+      setLoginPassword(signupPassword);
+      
+      // Reset signup form fields
+      setSignupUsername("");
+      setSignupPassword("");
+      setSignupEmail("");
+      setSignupName("");
+      
+      // Auto-toggle back to login mode after 2 seconds
+      setTimeout(() => {
+        setIsSignupMode(false);
+        setSignupSuccess("");
+      }, 2000);
+    } catch (err: any) {
+      setLoginError(err.message || "Registration failed. Please check connection.");
+    } finally {
+      setSignupLoading(false);
+    }
   };
 
   const handleLoginSubmit = async (e: React.FormEvent) => {
@@ -739,7 +858,10 @@ export default function LeadGenWorkspace() {
     try {
       const res = await fetch(`${API_BASE}/config`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { 
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${localStorage.getItem("userToken") || ""}`
+        },
         body: JSON.stringify({
           gemini_api_key: geminiKey,
           google_sheet_id: sheetId,
@@ -1001,7 +1123,9 @@ export default function LeadGenWorkspace() {
               </div>
             </div>
             <h2 className="text-lg font-black uppercase tracking-wider text-[#00637C]">LeadFlow CRM</h2>
-            <p className="text-[9px] text-zinc-400 font-bold uppercase tracking-widest">Administrative Dashboard Access</p>
+            <p className="text-[9px] text-zinc-400 font-bold uppercase tracking-widest">
+              {isSignupMode ? "Create New Account" : "Administrative Dashboard Access"}
+            </p>
           </div>
 
           {loginError && (
@@ -1011,58 +1135,170 @@ export default function LeadGenWorkspace() {
             </div>
           )}
 
-          <form onSubmit={handleLoginSubmit} className="space-y-4">
-            <div>
-              <label className="block text-[9px] font-bold uppercase tracking-wider text-zinc-400 mb-1.5">
-                Admin Username
-              </label>
-              <input
-                type="text"
-                value={loginUsername}
-                onChange={(e) => setLoginUsername(e.target.value)}
-                placeholder="e.g. admin"
-                className={`w-full border rounded-xl px-3.5 py-2 text-xs focus:outline-none focus:border-[#00637C] focus:ring-1 focus:ring-[#00637C] font-semibold transition-all ${
-                  isDarkMode 
-                    ? "bg-zinc-850 border-zinc-700 text-white" 
-                    : "bg-[#F8FAFC] border-zinc-200 text-[#111827]"
-                }`}
-                required
-              />
+          {signupSuccess && (
+            <div className="bg-emerald-50 border border-emerald-200 text-emerald-700 rounded-xl p-3 text-[10px] font-bold flex items-center gap-2 border-emerald-250">
+              <Sparkles className="h-4 w-4 shrink-0 text-emerald-500 animate-bounce" />
+              <span>{signupSuccess}</span>
             </div>
+          )}
 
-            <div>
-              <label className="block text-[9px] font-bold uppercase tracking-wider text-zinc-400 mb-1.5">
-                Password
-              </label>
-              <input
-                type="password"
-                value={loginPassword}
-                onChange={(e) => setLoginPassword(e.target.value)}
-                placeholder="••••••••"
-                className={`w-full border rounded-xl px-3.5 py-2 text-xs focus:outline-none focus:border-[#00637C] focus:ring-1 focus:ring-[#00637C] font-semibold transition-all ${
-                  isDarkMode 
-                    ? "bg-zinc-850 border-zinc-700 text-white" 
-                    : "bg-[#F8FAFC] border-zinc-200 text-[#111827]"
-                }`}
-                required
-              />
-            </div>
+          {isSignupMode ? (
+            /* SIGNUP FORM */
+            <form onSubmit={handleSignupSubmit} className="space-y-4">
+              <div>
+                <label className="block text-[9px] font-bold uppercase tracking-wider text-zinc-400 mb-1.5">
+                  Full Name
+                </label>
+                <input
+                  type="text"
+                  value={signupName}
+                  onChange={(e) => setSignupName(e.target.value)}
+                  placeholder="e.g. John Doe"
+                  className={`w-full border rounded-xl px-3.5 py-2 text-xs focus:outline-none focus:border-[#00637C] focus:ring-1 focus:ring-[#00637C] font-semibold transition-all ${
+                    isDarkMode 
+                      ? "bg-zinc-850 border-zinc-700 text-white" 
+                      : "bg-[#F8FAFC] border-zinc-200 text-[#111827]"
+                  }`}
+                />
+              </div>
 
+              <div>
+                <label className="block text-[9px] font-bold uppercase tracking-wider text-zinc-400 mb-1.5">
+                  Email Address
+                </label>
+                <input
+                  type="email"
+                  value={signupEmail}
+                  onChange={(e) => setSignupEmail(e.target.value)}
+                  placeholder="e.g. tester@agency.com"
+                  className={`w-full border rounded-xl px-3.5 py-2 text-xs focus:outline-none focus:border-[#00637C] focus:ring-1 focus:ring-[#00637C] font-semibold transition-all ${
+                    isDarkMode 
+                      ? "bg-zinc-850 border-zinc-700 text-white" 
+                      : "bg-[#F8FAFC] border-zinc-200 text-[#111827]"
+                  }`}
+                />
+              </div>
+
+              <div>
+                <label className="block text-[9px] font-bold uppercase tracking-wider text-zinc-400 mb-1.5">
+                  Username *
+                </label>
+                <input
+                  type="text"
+                  value={signupUsername}
+                  onChange={(e) => setSignupUsername(e.target.value)}
+                  placeholder="e.g. silvia_tester"
+                  className={`w-full border rounded-xl px-3.5 py-2 text-xs focus:outline-none focus:border-[#00637C] focus:ring-1 focus:ring-[#00637C] font-semibold transition-all ${
+                    isDarkMode 
+                      ? "bg-zinc-850 border-zinc-700 text-white" 
+                      : "bg-[#F8FAFC] border-zinc-200 text-[#111827]"
+                  }`}
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="block text-[9px] font-bold uppercase tracking-wider text-zinc-400 mb-1.5">
+                  Password *
+                </label>
+                <input
+                  type="password"
+                  value={signupPassword}
+                  onChange={(e) => setSignupPassword(e.target.value)}
+                  placeholder="••••••••"
+                  className={`w-full border rounded-xl px-3.5 py-2 text-xs focus:outline-none focus:border-[#00637C] focus:ring-1 focus:ring-[#00637C] font-semibold transition-all ${
+                    isDarkMode 
+                      ? "bg-zinc-850 border-zinc-700 text-white" 
+                      : "bg-[#F8FAFC] border-zinc-200 text-[#111827]"
+                  }`}
+                  required
+                />
+              </div>
+
+              <button
+                type="submit"
+                disabled={signupLoading}
+                className="w-full bg-[#00637C] hover:bg-[#004d60] text-white font-bold py-2.5 rounded-xl text-xs tracking-widest uppercase transition-all flex items-center justify-center gap-2 border border-[#00637C] shadow-md mt-2"
+              >
+                {signupLoading ? (
+                  <>
+                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                    Creating Account...
+                  </>
+                ) : (
+                  "Create Account"
+                )}
+              </button>
+            </form>
+          ) : (
+            /* LOGIN FORM */
+            <form onSubmit={handleLoginSubmit} className="space-y-4">
+              <div>
+                <label className="block text-[9px] font-bold uppercase tracking-wider text-zinc-400 mb-1.5">
+                  Username
+                </label>
+                <input
+                  type="text"
+                  value={loginUsername}
+                  onChange={(e) => setLoginUsername(e.target.value)}
+                  placeholder="e.g. admin"
+                  className={`w-full border rounded-xl px-3.5 py-2 text-xs focus:outline-none focus:border-[#00637C] focus:ring-1 focus:ring-[#00637C] font-semibold transition-all ${
+                    isDarkMode 
+                      ? "bg-zinc-850 border-zinc-700 text-white" 
+                      : "bg-[#F8FAFC] border-zinc-200 text-[#111827]"
+                  }`}
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="block text-[9px] font-bold uppercase tracking-wider text-zinc-400 mb-1.5">
+                  Password
+                </label>
+                <input
+                  type="password"
+                  value={loginPassword}
+                  onChange={(e) => setLoginPassword(e.target.value)}
+                  placeholder="••••••••"
+                  className={`w-full border rounded-xl px-3.5 py-2 text-xs focus:outline-none focus:border-[#00637C] focus:ring-1 focus:ring-[#00637C] font-semibold transition-all ${
+                    isDarkMode 
+                      ? "bg-zinc-850 border-zinc-700 text-white" 
+                      : "bg-[#F8FAFC] border-zinc-200 text-[#111827]"
+                  }`}
+                  required
+                />
+              </div>
+
+              <button
+                type="submit"
+                disabled={loginLoading}
+                className="w-full bg-[#00637C] hover:bg-[#004d60] text-white font-bold py-2.5 rounded-xl text-xs tracking-widest uppercase transition-all flex items-center justify-center gap-2 border border-[#00637C] shadow-md mt-2"
+              >
+                {loginLoading ? (
+                  <>
+                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                    Authenticating...
+                  </>
+                ) : (
+                  "Access Dashboard"
+                )}
+              </button>
+            </form>
+          )}
+
+          {/* Toggle Button */}
+          <div className="text-center pt-2 border-t border-zinc-150 dark:border-zinc-850">
             <button
-              type="submit"
-              disabled={loginLoading}
-              className="w-full bg-[#00637C] hover:bg-[#004d60] text-white font-bold py-2.5 rounded-xl text-xs tracking-widest uppercase transition-all flex items-center justify-center gap-2 border border-[#00637C] shadow-md mt-2"
+              onClick={() => {
+                setIsSignupMode(!isSignupMode);
+                setLoginError("");
+                setSignupSuccess("");
+              }}
+              className="text-[10px] text-[#00637C] hover:underline font-bold uppercase tracking-wider bg-transparent border-0 cursor-pointer"
             >
-              {loginLoading ? (
-                <>
-                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                  Authenticating...
-                </>
-              ) : (
-                "Access Dashboard"
-              )}
+              {isSignupMode ? "Already have an account? Log In" : "Don't have an account? Sign Up"}
             </button>
-          </form>
+          </div>
         </div>
       </div>
     );
@@ -1452,7 +1688,7 @@ export default function LeadGenWorkspace() {
                       </div>
                     </div>
 
-                    <form onSubmit={handleStartSearch} className="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
+                    <form onSubmit={handleStartSearch} className="grid grid-cols-1 md:grid-cols-5 gap-4 items-end">
                       <div className="md:col-span-2">
                         <label className="block text-[9px] font-bold uppercase tracking-wider text-zinc-400 mb-1.5">
                           Target Area / Location
@@ -1489,7 +1725,84 @@ export default function LeadGenWorkspace() {
                         />
                       </div>
 
-                      <div className="md:col-span-4 mt-2">
+                      <div className="md:col-span-1 relative flex flex-col justify-end">
+                        <label className="block text-[9px] font-bold uppercase tracking-wider text-zinc-400 mb-1.5">
+                          Scan Depth
+                        </label>
+                        <div className="relative">
+                          <button
+                            type="button"
+                            onClick={() => setIsScanDepthOpen(!isScanDepthOpen)}
+                            className={`w-full border rounded-xl px-3.5 py-2 text-xs focus:outline-none focus:border-[#00637C] focus:ring-1 focus:ring-[#00637C] font-semibold transition-all flex items-center justify-between gap-1.5 select-none ${
+                              isDarkMode 
+                                ? "bg-zinc-850 border-zinc-700 text-white hover:bg-zinc-800" 
+                                : "bg-[#F8FAFC] border-zinc-200 text-[#111827] hover:bg-zinc-50"
+                            }`}
+                          >
+                            <span>
+                              {limitInput === 30 && "30 (Page 1)"}
+                              {limitInput === 60 && "60 (Pages 1 & 2)"}
+                              {limitInput === 90 && "90 (Pages 1 - 3)"}
+                              {limitInput === 150 && "150 (Deep Scan)"}
+                            </span>
+                            <svg
+                              className={`h-3 w-3 transition-transform ${isScanDepthOpen ? "rotate-180" : ""}`}
+                              xmlns="http://www.w3.org/2000/svg"
+                              viewBox="0 0 20 20"
+                              fill="currentColor"
+                            >
+                              <path
+                                fillRule="evenodd"
+                                d="M5.23 7.21a.75.75 0 011.06.02L10 11.168l3.71-3.938a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z"
+                                clipRule="evenodd"
+                              />
+                            </svg>
+                          </button>
+
+                          {isScanDepthOpen && (
+                            <>
+                              <div className="fixed inset-0 z-40" onClick={() => setIsScanDepthOpen(false)}></div>
+                              <div
+                                className={`absolute right-0 left-0 z-50 mt-1.5 rounded-xl shadow-lg border outline-none py-1 overflow-hidden transition-all ${
+                                  isDarkMode
+                                    ? "bg-zinc-900 border-zinc-800 text-zinc-200"
+                                    : "bg-white border-[#E2E8F0] text-zinc-700"
+                                }`}
+                              >
+                                {[
+                                  { value: 30, label: "30 (Page 1)" },
+                                  { value: 60, label: "60 (Pages 1 & 2)" },
+                                  { value: 90, label: "90 (Pages 1 - 3)" },
+                                  { value: 150, label: "150 (Deep Scan)" }
+                                ].map((option) => {
+                                  const isActive = option.value === limitInput;
+                                  return (
+                                    <button
+                                      key={option.value}
+                                      type="button"
+                                      onClick={() => {
+                                        setLimitInput(option.value);
+                                        setIsScanDepthOpen(false);
+                                      }}
+                                      className={`w-full text-left px-4 py-2 text-xs font-semibold transition-all ${
+                                        isActive
+                                          ? "bg-[#00637C] text-white font-bold"
+                                          : isDarkMode
+                                          ? "hover:bg-[#00637C]/20 hover:text-[#e0f2f6]"
+                                          : "hover:bg-[#e0f2f6] hover:text-[#00637C]"
+                                      }`}
+                                    >
+                                      {option.label}
+                                    </button>
+                                  );
+                                })}
+                              </div>
+                            </>
+                          )}
+                        </div>
+                      </div>
+
+                      <div className="md:col-span-5 mt-2">
                         <button
                           type="submit"
                           disabled={isSearching}

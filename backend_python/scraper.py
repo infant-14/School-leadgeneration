@@ -49,53 +49,64 @@ def scrape_google_maps_leads(area: str, school_type: str, max_results: int = 15)
                 browser.close()
                 return leads
 
-        # Scroll sidebar
+        # Collect place URLs in exact rank order as we scroll
+        place_urls = []
         scroll_attempts = 0
-        max_scroll_attempts = 100
+        max_scroll_attempts = 60
         last_height = 0
+        no_change_count = 0
         
-        while len(leads) < max_results and scroll_attempts < max_scroll_attempts:
-            # Get list of place links
-            place_elements = page.query_selector_all('a[href*="/maps/place/"]')
-            logger.info(f"Found {len(place_elements)} place links on scroll attempt {scroll_attempts+1}")
+        while len(place_urls) < max_results and scroll_attempts < max_scroll_attempts:
+            # Get list of place links in current view
+            feed_el = page.query_selector(scrollable_selector)
+            place_elements = feed_el.query_selector_all('a[href*="/maps/place/"]') if feed_el else page.query_selector_all('a[href*="/maps/place/"]')
             
-            # Scroll down the sidebar
+            # Append new links in order of discovery
+            for el in place_elements:
+                href = el.get_attribute("href")
+                if href and href not in place_urls:
+                    place_urls.append(href)
+                    if len(place_urls) >= max_results:
+                        break
+            
+            logger.info(f"Collected {len(place_urls)} unique place links on scroll attempt {scroll_attempts+1}")
+            
+            if len(place_urls) >= max_results:
+                break
+
+            # Scroll to the bottom of the sidebar to trigger next lazy load batch
             page.evaluate(
                 f"""
                 const feed = document.querySelector('{scrollable_selector}');
                 if (feed) {{
-                    feed.scrollBy(0, 1000);
+                    feed.scrollTo(0, feed.scrollHeight);
                 }}
                 """
             )
-            page.wait_for_timeout(2000)
+            # Wait for lazy loading to fetch and render new elements
+            page.wait_for_timeout(2500)
             
-            # Check if height changed to detect end of scrolling
+            # Check if height changed
             new_height = page.evaluate(f"document.querySelector('{scrollable_selector}').scrollHeight")
             if new_height == last_height:
-                # Try scrolling a bit more or break
-                logger.info("No height change. Reached end of results list.")
-                break
+                no_change_count += 1
+                logger.info(f"Scroll height did not change (attempt {no_change_count}/4). Waiting for results...")
+                if no_change_count >= 4:
+                    logger.info("Reached the absolute end of the results list.")
+                    break
+            else:
+                no_change_count = 0  # Reset counter if height changed
+                
             last_height = new_height
             scroll_attempts += 1
-
-        # Re-fetch elements after scrolling
-        place_elements = page.query_selector_all('a[href*="/maps/place/"]')
-        place_urls = []
-        for el in place_elements:
-            href = el.get_attribute("href")
-            if href and href not in place_urls:
-                place_urls.append(href)
-                if len(place_urls) >= max_results:
-                    break
-        
+            
         logger.info(f"Total unique place URLs collected: {len(place_urls)}")
         
         # Visit each place page and extract info
         for idx, url in enumerate(place_urls, 1):
             logger.info(f"Processing lead {idx}/{len(place_urls)}: {url}")
             try:
-                page.goto(url, timeout=30000)
+                page.goto(url, timeout=12000)
                 page.wait_for_timeout(2000)  # Wait for details panel to load
                 
                 lead = parse_place_details(page, area)

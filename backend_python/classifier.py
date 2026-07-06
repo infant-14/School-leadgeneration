@@ -272,7 +272,7 @@ def evaluate_website_screenshot(website_url: str) -> tuple:
             page = context.new_page()
             
             # Short timeout to avoid stalling the process
-            page.goto(website_url, timeout=25000, wait_until="load")
+            page.goto(website_url, timeout=12000, wait_until="load")
             page.wait_for_timeout(2000)  # Wait for animations to settle
             screenshot_bytes = page.screenshot(full_page=False)
             
@@ -297,7 +297,7 @@ def evaluate_website_screenshot(website_url: str) -> tuple:
             if contact_url and contact_url != website_url:
                 try:
                     logger.info(f"Navigating to contact page: {contact_url}")
-                    page.goto(contact_url, timeout=15000, wait_until="load")
+                    page.goto(contact_url, timeout=8000, wait_until="load")
                     page.wait_for_timeout(1000)
                     contact_text = page.evaluate("() => document.body.innerText") or ""
                 except Exception as contact_err:
@@ -450,19 +450,19 @@ def get_neighboring_suburbs(area: str) -> list:
     
     # Trichy region mapping
     if "srirangam" in area_clean:
-        return ["srirangam", "thiruvanaikoil", "thiruvanai kovil", "thiruvanai", "koothur", "woraiyur", "chathiram", "chatram"]
+        return ["srirangam", "thiruvanaikoil", "thiruvanai kovil", "thiruvanai", "koothur", "woraiyur", "chathiram", "chatram", "trichy", "tiruchirappalli"]
     elif "thiruvanaikoil" in area_clean or "thiruvanai kovil" in area_clean:
-        return ["thiruvanaikoil", "thiruvanai kovil", "srirangam", "koothur"]
+        return ["thiruvanaikoil", "thiruvanai kovil", "srirangam", "koothur", "trichy", "tiruchirappalli"]
     
     # Chennai regions
     elif "medavakkam" in area_clean:
-        return ["medavakkam", "pallikaranai", "kovilambakkam", "nanmangalam", "santhosapuram", "perumbakkam", "vengaivasal", "vengavasal", "selaiyur", "sholinganallur", "semmancheri"]
+        return ["medavakkam", "pallikaranai", "kovilambakkam", "nanmangalam", "santhosapuram", "perumbakkam", "vengaivasal", "vengavasal", "selaiyur", "sholinganallur", "semmancheri", "madambakkam", "sithalapakkam"]
     elif "tambaram" in area_clean:
-        return ["tambaram", "chromepet", "selaiyur", "chitlapakkam", "irumbuliyur", "mudichur", "peerkankaranai", "perungalathur", "sanatorium", "pallavaram", "vandalur"]
+        return ["tambaram", "chromepet", "selaiyur", "chitlapakkam", "irumbuliyur", "mudichur", "peerkankaranai", "perungalathur", "sanatorium", "pallavaram", "vandalur", "vengambakkam", "madambakkam", "hastinapuram", "kovilanchery", "sithalapakkam", "semmancheri", "gowrivakkam", "rajakilpakkam", "kamarajapuram", "camp road"]
     elif "adyar" in area_clean:
         return ["adyar", "thiruvanmiyur", "besant nagar", "ra puram", "mylapore", "velachery", "kotturpuram", "guindy"]
     elif "sholinganallur" in area_clean:
-        return ["sholinganallur", "perumbakkam", "semmancheri", "navalur", "karapakkam", "okkiyam", "thoraipakkam", "medavakkam"]
+        return ["sholinganallur", "perumbakkam", "semmancheri", "navalur", "karapakkam", "okkiyam", "thoraipakkam", "medavakkam", "utsandi", "kanathur", "panaiyur"]
         
     return [area_clean]
 

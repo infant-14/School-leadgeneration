@@ -5,6 +5,7 @@ import { Lead } from '../entities/lead.entity';
 import { ScraperGateway } from './scraper.gateway';
 import { spawn } from 'child_process';
 import * as path from 'path';
+import * as fs from 'fs';
 
 @Injectable()
 export class ScraperService {
@@ -22,7 +23,7 @@ export class ScraperService {
     return this.isScraping;
   }
 
-  async runScraper(area: string, type: string, limit: number): Promise<void> {
+  async runScraper(area: string, type: string, limit: number, userId: number | null): Promise<void> {
     if (this.isScraping) {
       throw new BadRequestException('A scraping job is already running');
     }
@@ -33,12 +34,19 @@ export class ScraperService {
     const pythonExe = path.join(this.rootDir, 'venv/Scripts/python.exe');
     const mainScript = path.join(this.rootDir, 'backend_python', 'main.py');
 
-    this.logger.log(`Spawning scraper process: ${pythonExe} ${mainScript} --area "${area}" --type "${type}" --limit ${limit}`);
+    // Fetch existing leads and write to JSON file for Python script to skip
+    const existingLeads = await this.leadsRepository.find({ where: { userId: userId as any } });
+    const existingNames = existingLeads.map(l => l.school_name.toLowerCase().trim());
+    const tempFileName = `existing_leads_${userId || 0}_${Date.now()}.json`;
+    const existingFile = path.join(this.rootDir, 'backend_python', tempFileName);
+    fs.writeFileSync(existingFile, JSON.stringify(existingNames, null, 2));
+
+    this.logger.log(`Spawning scraper process: ${pythonExe} ${mainScript} --area "${area}" --type "${type}" --limit ${limit} --existing-file "${existingFile}"`);
 
     // Spawn the python scraper pipeline
     const child = spawn(
       `"${pythonExe}"`, 
-      ['-W', 'ignore', '-u', `"${mainScript}"`, '--area', `"${area}"`, '--type', `"${type}"`, '--limit', `${limit}`], 
+      ['-W', 'ignore', '-u', `"${mainScript}"`, '--area', `"${area}"`, '--type', `"${type}"`, '--limit', `${limit}`, '--existing-file', `"${existingFile}"`], 
       {
         cwd: this.rootDir,
         shell: true,
@@ -103,6 +111,16 @@ export class ScraperService {
 
     child.on('close', async (code) => {
       this.isScraping = false;
+      
+      // Clean up temp JSON file
+      try {
+        if (fs.existsSync(existingFile)) {
+          fs.unlinkSync(existingFile);
+        }
+      } catch (err) {
+        this.logger.error(`Failed to delete temp existing file: ${err.message}`);
+      }
+
       if (code === 0) {
         const jsonString = jsonAccumulator.trim();
         if (jsonString) {
@@ -110,8 +128,10 @@ export class ScraperService {
             const leads = JSON.parse(jsonString);
             this.scraperGateway.broadcast(`> Scraper finished! Syncing ${leads.length} leads to database...`);
             for (const item of leads) {
-              // Check if existing lead
-              const existing = await this.leadsRepository.findOne({ where: { school_name: item.school_name } });
+              // Check if existing lead belonging to this user
+              const existing = await this.leadsRepository.findOne({ 
+                where: { school_name: item.school_name, userId: userId as any } 
+              });
               if (existing) {
                 // update details (preserve stage/status)
                 Object.assign(existing, {
@@ -133,6 +153,7 @@ export class ScraperService {
                 // create new lead
                 const newLead = this.leadsRepository.create({
                   school_name: item.school_name,
+                  userId,
                   website_url: item.website_url || '',
                   contact_number: item.contact_number || '',
                   area_name: item.area_name || '',

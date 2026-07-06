@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ConfigModule } from '@nestjs/config';
 import { Lead } from './entities/lead.entity';
+import { User } from './entities/user.entity';
 import { LeadsModule } from './leads/leads.module';
 import { ScraperModule } from './scraper/scraper.module';
 import { ConfigController } from './config/config.controller';
@@ -22,7 +23,7 @@ import * as path from 'path';
           return {
             type: 'better-sqlite3',
             database: path.resolve(__dirname, '../../../school_leads.db'),
-            entities: [Lead],
+            entities: [Lead, User],
             synchronize: true,
             logging: false,
           };
@@ -35,12 +36,13 @@ import * as path from 'path';
           username: process.env.DB_USERNAME || 'root',
           password: process.env.DB_PASSWORD !== undefined ? process.env.DB_PASSWORD : '',
           database: process.env.DB_DATABASE || 'school_leads',
-          entities: [Lead],
+          entities: [Lead, User],
           synchronize: true,
           logging: false,
         };
       },
     }),
+    TypeOrmModule.forFeature([User]),
     LeadsModule,
     ScraperModule,
   ],

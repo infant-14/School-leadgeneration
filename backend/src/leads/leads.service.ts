@@ -17,8 +17,9 @@ export class LeadsService {
     private readonly leadsRepository: Repository<Lead>,
   ) {}
 
-  async findAll(search?: string, status?: string): Promise<Lead[]> {
+  async findAll(userId: number | null, search?: string, status?: string): Promise<Lead[]> {
     const where: any = {};
+    where.userId = userId;
 
     if (status) {
       where.status = status;
@@ -34,18 +35,18 @@ export class LeadsService {
           { ...where, address: Like(`%${search}%`) },
           { ...where, remarks: Like(`%${search}%`) },
         ],
-        order: { id: 'DESC' },
+        order: { id: 'ASC' },
       });
     }
 
     return this.leadsRepository.find({
       where,
-      order: { id: 'DESC' },
+      order: { id: 'ASC' },
     });
   }
 
-  async updateStatus(id: number, status: string): Promise<Lead> {
-    const lead = await this.leadsRepository.findOne({ where: { id } });
+  async updateStatus(id: number, status: string, userId: number | null): Promise<Lead> {
+    const lead = await this.leadsRepository.findOne({ where: { id, userId: userId as any } });
     if (!lead) {
       throw new NotFoundException(`Lead with ID ${id} not found`);
     }
@@ -53,25 +54,28 @@ export class LeadsService {
     return this.leadsRepository.save(lead);
   }
 
-  async remove(id: number): Promise<void> {
-    const result = await this.leadsRepository.delete(id);
+  async remove(id: number, userId: number | null): Promise<void> {
+    const result = await this.leadsRepository.delete({ id, userId: userId as any });
     if (result.affected === 0) {
       throw new NotFoundException(`Lead with ID ${id} not found`);
     }
   }
 
-  async removeAll(): Promise<void> {
-    await this.leadsRepository.clear();
+  async removeAll(userId: number | null): Promise<void> {
+    await this.leadsRepository.delete({ userId: userId as any });
   }
 
-  async create(leadData: Partial<Lead>): Promise<Lead> {
-    const lead = this.leadsRepository.create(leadData);
+  async create(leadData: Partial<Lead>, userId: number | null): Promise<Lead> {
+    const lead = this.leadsRepository.create({ ...leadData, userId });
     return this.leadsRepository.save(lead);
   }
 
-  async generateExcel(): Promise<string> {
+  async generateExcel(userId: number | null): Promise<string> {
     try {
-      const leads = await this.leadsRepository.find({ order: { id: 'DESC' } });
+      const leads = await this.leadsRepository.find({
+        where: { userId: userId as any },
+        order: { id: 'ASC' }
+      });
       const exportPath = path.join(this.rootDir, 'school_leads_export.xlsx');
 
       const workbook = new ExcelJS.Workbook();
@@ -223,7 +227,7 @@ export class LeadsService {
     }
   }
 
-  async syncToGoogleSheets(): Promise<string> {
+  async syncToGoogleSheets(userId: number | null): Promise<string> {
     const sheetId = process.env.GOOGLE_SHEET_ID;
     if (!sheetId) {
       throw new InternalServerErrorException('No GOOGLE_SHEET_ID configured in environment');
@@ -235,7 +239,10 @@ export class LeadsService {
     }
 
     try {
-      const leads = await this.leadsRepository.find({ order: { id: 'DESC' } });
+      const leads = await this.leadsRepository.find({
+        where: { userId: userId as any },
+        order: { id: 'ASC' }
+      });
 
       const auth = new google.auth.GoogleAuth({
         keyFile: credentialsPath,

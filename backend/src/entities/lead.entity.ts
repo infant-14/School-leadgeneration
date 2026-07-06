@@ -5,8 +5,11 @@ export class Lead {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @Column({ unique: true })
+  @Column()
   school_name: string;
+
+  @Column({ type: 'int', nullable: true })
+  userId: number | null;
 
   @Column({ nullable: true })
   website_url: string;
