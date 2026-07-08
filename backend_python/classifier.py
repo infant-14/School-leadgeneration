@@ -2,6 +2,7 @@ import os
 import logging
 import io
 import requests
+import re
 from PIL import Image
 import google.generativeai as genai
 from playwright.sync_api import sync_playwright
@@ -146,30 +147,41 @@ def classify_institution_type(school_name: str, target_type: str = "Matriculatio
 
     return _fallback_classify_institution_type(school_name, target_type)
 
+def extract_pincode_from_address(address: str) -> str:
+    if not address:
+        return ""
+    match = re.search(r'\b\d{6}\b', address)
+    return match.group(0) if match else ""
+
+
 def extract_area_from_address(address: str, default_area: str) -> str:
     if not address:
         return default_area.capitalize()
     
-    parts = [p.strip() for p in address.split(',')]
+    # Remove pincode from the address string when finding parts
+    addr_clean = re.sub(r'\b\d{6}\b', '', address).strip()
+    addr_clean = re.sub(r'-\s*$', '', addr_clean).strip() # remove trailing dash if any
     
-    # Find Chennai or other city keyword in the address parts
-    chennai_idx = -1
+    parts = [p.strip() for p in addr_clean.split(',')]
+    parts = [p for p in parts if p]
+    
+    if not parts:
+        return default_area.capitalize()
+        
+    city_keywords = ["chennai", "trichy", "tiruchirappalli", "chengalpattu", "kanchipuram", "medavakkam", "shollinganallur", "srirangam", "tambaram"]
+    city_idx = -1
     for i, part in enumerate(parts):
-        if "chennai" in part.lower():
-            chennai_idx = i
+        if any(keyword in part.lower() for keyword in city_keywords):
+            city_idx = i
             break
             
-    if chennai_idx > 0:
-        # The part before "Chennai" is usually the suburb/area
-        area = parts[chennai_idx - 1]
-        # If it's a number or OMR/ECR road details, look one part further back
-        if area.isdigit() or len(area) <= 2 or any(x in area.lower() for x in ["road", "street", "nagar", "omr", "ecr"]):
-            # Use nagar if it contains suburb names, otherwise go back
-            if "nagar" in area.lower() and not any(x in area.lower() for x in ["road", "street"]):
-                pass
-            elif chennai_idx > 1:
-                area = parts[chennai_idx - 2]
-        return area.strip().capitalize()
+    if city_idx > 0:
+        area = parts[city_idx - 1]
+        if area.isdigit() or len(area) <= 3 or any(x in area.lower() for x in ["road", "street", "no:", "no."]):
+            if city_idx > 1:
+                area = parts[city_idx - 2]
+        area = re.sub(r'\b(tamil\s*nadu|tn)\b', '', area, flags=re.IGNORECASE).strip()
+        return area.capitalize()
         
     if len(parts) >= 3:
         return parts[-3].strip().capitalize()
@@ -181,15 +193,17 @@ def extract_area_from_address(address: str, default_area: str) -> str:
 
 def extract_info_from_website_text(text: str, gmaps_address: str, gmaps_phone: str, search_area: str) -> dict:
     """
-    Uses Gemini/Ollama to extract contact number, full address, and local area name
+    Uses Gemini/Ollama to extract contact number, full address, postal pincode, and local area name
     from website text, falling back to Google Maps data if website doesn't contain them.
     """
     cleaned_text = text[:8000] if text else ""
     default_area = extract_area_from_address(gmaps_address, search_area)
+    gmaps_pincode = extract_pincode_from_address(gmaps_address)
     
     fallback_data = {
         "contact_number": gmaps_phone or "N/A",
         "address": gmaps_address or "N/A",
+        "pincode": gmaps_pincode,
         "area_name": default_area
     }
     
@@ -198,12 +212,13 @@ def extract_info_from_website_text(text: str, gmaps_address: str, gmaps_phone: s
         
     prompt = (
         "You are an information extraction assistant. Analyze the following text extracted from a school's website "
-        "and find the school's contact number (phone number), full address, and the specific local area/neighborhood name (e.g., Sholinganallur, Navalur, Semmancheri, Tambaram, etc.).\n\n"
+        "and find the school's contact number (phone number), full address, the 6-digit postal pincode, and the specific local area/neighborhood name that is represented by the pincode in the address (e.g., Sholinganallur, Medavakkam, Srirangam, Tambaram, etc.).\n\n"
         f"If the website text does not contain a contact number, fall back to: '{gmaps_phone}'.\n"
         f"If the website text does not contain a full address, fall back to: '{gmaps_address}'.\n"
         f"If the website text does not contain a local area name, fall back to: '{default_area}'.\n\n"
-        "Return the result as a simple JSON object with exactly three keys: 'contact_number', 'address', and 'area_name'.\n"
-        "Ensure the area_name is just the name of the suburb/neighborhood (e.g. 'Semmancheri' or 'Navalur', not the full address).\n"
+        "Return the result as a simple JSON object with exactly four keys: 'contact_number', 'address', 'pincode', and 'area_name'.\n"
+        "Ensure the area_name is exactly the suburb/neighborhood/locality corresponding to the pincode in the address, not the street name or district/city (e.g. 'Tambaram' or 'Srirangam', not 'Chennai' or 'Trichy').\n"
+        "Ensure the pincode is a 6-digit number.\n"
         "Ensure the contact_number is in a clean, readable format.\n"
         "Ensure the address is the complete postal address.\n\n"
         f"Website text content:\n{cleaned_text}"
@@ -220,9 +235,11 @@ def extract_info_from_website_text(text: str, gmaps_address: str, gmaps_phone: s
             )
             import json
             data = json.loads(response.text.strip())
+            extracted_addr = data.get("address") or fallback_data["address"]
             return {
                 "contact_number": data.get("contact_number") or fallback_data["contact_number"],
-                "address": data.get("address") or fallback_data["address"],
+                "address": extracted_addr,
+                "pincode": data.get("pincode") or extract_pincode_from_address(extracted_addr) or fallback_data["pincode"],
                 "area_name": (data.get("area_name") or fallback_data["area_name"]).strip().capitalize()
             }
         except Exception as e:
@@ -236,9 +253,11 @@ def extract_info_from_website_text(text: str, gmaps_address: str, gmaps_phone: s
             if result:
                 import json
                 data = json.loads(result.strip())
+                extracted_addr = data.get("address") or fallback_data["address"]
                 return {
                     "contact_number": data.get("contact_number") or fallback_data["contact_number"],
-                    "address": data.get("address") or fallback_data["address"],
+                    "address": extracted_addr,
+                    "pincode": data.get("pincode") or extract_pincode_from_address(extracted_addr) or fallback_data["pincode"],
                     "area_name": (data.get("area_name") or fallback_data["area_name"]).strip().capitalize()
                 }
         except Exception as e:
@@ -258,6 +277,7 @@ def evaluate_website_screenshot(website_url: str) -> tuple:
 
     screenshot_bytes = None
     website_text = ""
+    audit_stats = None
     
     # 2. Try to capture website screenshot and text content using Playwright
     try:
@@ -276,8 +296,27 @@ def evaluate_website_screenshot(website_url: str) -> tuple:
             page.wait_for_timeout(2000)  # Wait for animations to settle
             screenshot_bytes = page.screenshot(full_page=False)
             
-            # Get homepage text
+            # Get homepage text and technical audit stats
             homepage_text = page.evaluate("() => document.body.innerText") or ""
+            try:
+                audit_stats = page.evaluate("""() => {
+                    const links = Array.from(document.querySelectorAll('a'));
+                    const hasSocial = links.some(a => {
+                        const href = (a.getAttribute('href') || '').toLowerCase();
+                        return href.includes('facebook.com') || href.includes('instagram.com') || href.includes('linkedin.com') || href.includes('youtube.com');
+                    });
+                    const match = document.body.innerText.match(/\\b(20\\d{2})\\b/);
+                    return {
+                        title: document.title || "",
+                        metaDesc: document.querySelector('meta[name="description"]')?.content || "",
+                        hasViewport: !!document.querySelector('meta[name="viewport"]'),
+                        textLength: document.body.innerText.length || 0,
+                        hasSocialLinks: hasSocial,
+                        copyrightYear: match ? match[1] : null
+                    };
+                }""")
+            except Exception as audit_err:
+                logger.warning(f"Error executing site audit script: {audit_err}")
             
             # Search for contact link
             contact_text = ""
@@ -310,9 +349,40 @@ def evaluate_website_screenshot(website_url: str) -> tuple:
         # If site is unreachable, it's a good candidate for redesign!
         return "Redesign", f"Website failed to load: {str(e)[:50]}. Suggest redesigning and hosting a reliable site.", ""
 
-    # 3. Handle none provider
+    # 3. Handle none provider (generate detailed feedback based on technical audit)
     if ai_provider == "none":
-        return "Redesign", "Need to improve the design (Local dev default)", website_text
+        feedbacks = []
+        appearance_res = "Good"
+        
+        if website_url.startswith("http://"):
+            feedbacks.append("Insecure connection (HTTP)")
+            appearance_res = "Redesign"
+            
+        if audit_stats:
+            if not audit_stats.get("hasViewport", True):
+                feedbacks.append("Lacks mobile responsiveness support")
+                appearance_res = "Redesign"
+            if not audit_stats.get("metaDesc"):
+                feedbacks.append("Missing SEO meta description")
+            if audit_stats.get("textLength", 1000) < 600:
+                feedbacks.append("Thin content page")
+                appearance_res = "Redesign"
+            if not audit_stats.get("hasSocialLinks", True):
+                feedbacks.append("Missing social media profile links")
+            cpy = audit_stats.get("copyrightYear")
+            if cpy and int(cpy) < 2025:
+                feedbacks.append(f"Outdated copyright year ({cpy})")
+                appearance_res = "Redesign"
+        else:
+            feedbacks.append("Website content loaded incorrectly")
+            appearance_res = "Redesign"
+            
+        if not feedbacks:
+            remarks_res = "Website looks modern, secure, and responsive."
+        else:
+            remarks_res = " | ".join(feedbacks) + ". Suggest layout refresh."
+            
+        return appearance_res, remarks_res, website_text
 
     prompt = (
         "You are an expert website designer reviewing school websites to see if they need redesign services. "

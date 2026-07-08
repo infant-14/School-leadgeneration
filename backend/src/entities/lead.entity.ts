@@ -27,6 +27,9 @@ export class Lead {
   address: string;
 
   @Column({ nullable: true })
+  pincode: string;
+
+  @Column({ nullable: true })
   institution_type: string;
 
   @Column({ nullable: true })

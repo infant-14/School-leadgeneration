@@ -18,6 +18,7 @@ HEADERS = [
     "Website URL",
     "Contact Number",
     "School Address",
+    "Pincode",
     "Appearance",
     "Remarks"
 ]
@@ -78,6 +79,7 @@ def save_leads_to_excel(leads: list, filename: str = "school_leads.xlsx") -> str
                 lead.get("website_url", ""),
                 lead.get("contact_number", ""),
                 lead.get("address", ""),
+                lead.get("pincode", ""),
                 lead.get("appearance", "Redesign"),
                 lead.get("remarks", "")
             ]
@@ -207,6 +209,7 @@ def sync_to_google_sheets(leads: list, sheet_id: str) -> bool:
                 lead.get("website_url", ""),
                 lead.get("contact_number", ""),
                 lead.get("address", ""),
+                lead.get("pincode", ""),
                 lead.get("appearance", "Redesign"),
                 lead.get("remarks", "")
             ])
@@ -216,7 +219,7 @@ def sync_to_google_sheets(leads: list, sheet_id: str) -> bool:
         # Clear existing sheet first
         service.spreadsheets().values().clear(
             spreadsheetId=sheet_id,
-            range="Sheet1!A1:L1000"
+            range="Sheet1!A1:M1000"
         ).execute()
         
         # Write new values

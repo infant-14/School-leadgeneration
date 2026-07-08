@@ -185,6 +185,7 @@ def run_lead_pipeline(area: str, school_type: str, limit: int, output_file: str 
                 "contact_number": info["contact_number"],
                 "area_name": info["area_name"],
                 "address": info["address"],
+                "pincode": info["pincode"],
                 "institution_type": inst_type,
                 "appearance": appearance,
                 "remarks": remarks,

@@ -1,6 +1,6 @@
 import { Injectable, InternalServerErrorException, Logger, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, Like } from 'typeorm';
+import { Repository, Like, IsNull } from 'typeorm';
 import { Lead } from '../entities/lead.entity';
 import * as path from 'path';
 import * as fs from 'fs';
@@ -19,7 +19,7 @@ export class LeadsService {
 
   async findAll(userId: number | null, search?: string, status?: string): Promise<Lead[]> {
     const where: any = {};
-    where.userId = userId;
+    where.userId = userId === null ? IsNull() : userId;
 
     if (status) {
       where.status = status;
@@ -35,18 +35,18 @@ export class LeadsService {
           { ...where, address: Like(`%${search}%`) },
           { ...where, remarks: Like(`%${search}%`) },
         ],
-        order: { id: 'ASC' },
+        order: { id: 'DESC' },
       });
     }
 
     return this.leadsRepository.find({
       where,
-      order: { id: 'ASC' },
+      order: { id: 'DESC' },
     });
   }
 
   async updateStatus(id: number, status: string, userId: number | null): Promise<Lead> {
-    const lead = await this.leadsRepository.findOne({ where: { id, userId: userId as any } });
+    const lead = await this.leadsRepository.findOne({ where: { id, userId: userId === null ? IsNull() : userId } });
     if (!lead) {
       throw new NotFoundException(`Lead with ID ${id} not found`);
     }
@@ -55,14 +55,14 @@ export class LeadsService {
   }
 
   async remove(id: number, userId: number | null): Promise<void> {
-    const result = await this.leadsRepository.delete({ id, userId: userId as any });
+    const result = await this.leadsRepository.delete({ id, userId: userId === null ? IsNull() : userId });
     if (result.affected === 0) {
       throw new NotFoundException(`Lead with ID ${id} not found`);
     }
   }
 
   async removeAll(userId: number | null): Promise<void> {
-    await this.leadsRepository.delete({ userId: userId as any });
+    await this.leadsRepository.delete({ userId: userId === null ? IsNull() : userId });
   }
 
   async create(leadData: Partial<Lead>, userId: number | null): Promise<Lead> {
@@ -73,8 +73,8 @@ export class LeadsService {
   async generateExcel(userId: number | null): Promise<string> {
     try {
       const leads = await this.leadsRepository.find({
-        where: { userId: userId as any },
-        order: { id: 'ASC' }
+        where: { userId: userId === null ? IsNull() : userId },
+        order: { id: 'DESC' }
       });
       const exportPath = path.join(this.rootDir, 'school_leads_export.xlsx');
 
@@ -114,6 +114,7 @@ export class LeadsService {
         "Website URL",
         "Contact Number",
         "School Address",
+        "Pincode",
         "Appearance",
         "Remarks"
       ];
@@ -142,6 +143,7 @@ export class LeadsService {
           lead.website_url || "",
           lead.contact_number || "",
           lead.address || "",
+          lead.pincode || "",
           lead.appearance || "Redesign",
           lead.remarks || ""
         ];
@@ -240,8 +242,8 @@ export class LeadsService {
 
     try {
       const leads = await this.leadsRepository.find({
-        where: { userId: userId as any },
-        order: { id: 'ASC' }
+        where: { userId: userId === null ? IsNull() : userId },
+        order: { id: 'DESC' }
       });
 
       const auth = new google.auth.GoogleAuth({
@@ -262,6 +264,7 @@ export class LeadsService {
         "Website URL",
         "Contact Number",
         "School Address",
+        "Pincode",
         "Appearance",
         "Remarks"
       ];
@@ -279,6 +282,7 @@ export class LeadsService {
           lead.website_url || "",
           lead.contact_number || "",
           lead.address || "",
+          lead.pincode || "",
           lead.appearance || "Redesign",
           lead.remarks || ""
         ]);
@@ -287,7 +291,7 @@ export class LeadsService {
       // Clear existing values in sheet
       await sheets.spreadsheets.values.clear({
         spreadsheetId: sheetId,
-        range: 'Sheet1!A1:L1000',
+        range: 'Sheet1!A1:M1000',
       });
 
       // Write new values
