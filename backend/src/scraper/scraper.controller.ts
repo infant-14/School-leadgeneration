@@ -1,4 +1,4 @@
-import { Controller, Post, Get, Body, Headers } from '@nestjs/common';
+import { Controller, Post, Get, Body, Headers, BadRequestException, Logger } from '@nestjs/common';
 import { ScraperService } from './scraper.service';
 
 function getUserIdFromToken(headers: any): number | null {
@@ -18,6 +18,8 @@ function getUserIdFromToken(headers: any): number | null {
 
 @Controller('scrape')
 export class ScraperController {
+  private readonly logger = new Logger(ScraperController.name);
+
   constructor(private readonly scraperService: ScraperService) {}
 
   @Post()
@@ -28,8 +30,17 @@ export class ScraperController {
     @Headers() headers: any,
   ) {
     const userId = getUserIdFromToken(headers);
-    // Run scraper asynchronously
-    this.scraperService.runScraper(area, schoolType, limit !== undefined ? limit : 0, userId);
+
+    // Check status synchronously first
+    if (this.scraperService.getStatus()) {
+      throw new BadRequestException('A scraping job is already running');
+    }
+
+    // Run scraper asynchronously and handle any errors in the background
+    this.scraperService.runScraper(area, schoolType, limit !== undefined ? limit : 0, userId).catch(err => {
+      this.logger.error(`Error in scraper background process: ${err.message}`, err.stack);
+    });
+
     return { message: 'Scrape job initiated successfully' };
   }
 

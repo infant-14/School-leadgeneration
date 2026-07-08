@@ -22,6 +22,8 @@ def init_db():
             website_url TEXT,
             contact_number TEXT,
             area_name TEXT,
+            address TEXT,
+            pincode TEXT,
             institution_type TEXT,
             appearance TEXT,
             remarks TEXT,
@@ -51,6 +53,8 @@ def save_or_update_lead(lead: dict):
                 SET website_url = ?,
                     contact_number = ?,
                     area_name = ?,
+                    address = ?,
+                    pincode = ?,
                     institution_type = ?,
                     appearance = ?,
                     remarks = ?,
@@ -63,6 +67,8 @@ def save_or_update_lead(lead: dict):
                 lead.get("website_url", ""),
                 lead.get("contact_number", ""),
                 lead.get("area_name", ""),
+                lead.get("address", ""),
+                lead.get("pincode", ""),
                 lead.get("institution_type", "Matriculation"),
                 lead.get("appearance", "Redesign"),
                 lead.get("remarks", ""),
@@ -78,14 +84,17 @@ def save_or_update_lead(lead: dict):
             cursor.execute("""
                 INSERT INTO leads (
                     school_name, website_url, contact_number, area_name, 
-                    institution_type, appearance, remarks, atmosphere, 
-                    social_media, google_rating, photo_url, status
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'New Lead')
+                    address, pincode, institution_type, appearance, 
+                    remarks, atmosphere, social_media, google_rating, 
+                    photo_url, status
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'New Lead')
             """, (
                 lead["school_name"],
                 lead.get("website_url", ""),
                 lead.get("contact_number", ""),
                 lead.get("area_name", ""),
+                lead.get("address", ""),
+                lead.get("pincode", ""),
                 lead.get("institution_type", "Matriculation"),
                 lead.get("appearance", "Redesign"),
                 lead.get("remarks", ""),

@@ -71,110 +71,110 @@ def evaluate_social_media_status(website_url: str, school_name: str, area: str) 
                         
             # logger.info(f"Found social links for '{school_name}': {social_urls}")
             
-            # 3. Check Facebook activity (DISABLED for speed, kept for future use)
-            # if social_urls["facebook"]:
-            #     try:
-            #         logger.info(f"Checking Facebook page activity: {social_urls['facebook']}")
-            #         page.goto(social_urls["facebook"], timeout=8000)
-            #         page.wait_for_timeout(2000)
-            #         
-            #         html_content = page.content()
-            #         soup = BeautifulSoup(html_content, 'html.parser')
-            #         page_text = soup.get_text()
-            #         
-            #         current_month = datetime.now().strftime("%B")
-            #         prev_month = (datetime.now() - timedelta(days=30)).strftime("%B")
-            #         recent_keywords = [
-            #             "Just now", "yesterday", "hrs ago", "mins ago", "days ago",
-            #             current_month, prev_month
-            #         ]
-            #         
-            #         # Check simple keywords
-            #         for word in recent_keywords:
-            #             pattern = re.compile(r'\b' + re.escape(word) + r'\b', re.IGNORECASE)
-            #             if pattern.search(page_text):
-            #                 logger.info(f"Found recent posting activity indicator keyword: '{word}' on Facebook.")
-            #                 is_active = True
-            #                 break
-            #                 
-            #         # Check precise regexes (handles layout concatenations like 'account6h')
-            #         if not is_active:
-            #             hours_match = re.search(r'(?<!\d)([1-9]|1\d|2[0-3])h\b', page_text, re.IGNORECASE)
-            #             days_match = re.search(r'(?<!\d)([1-9]|[1-2]\d|30)d\b', page_text, re.IGNORECASE)
-            #             ago_match = re.search(r'\b\d+\s*(hrs?|hours?|days?|mins?|minutes?)\s*ago\b', page_text, re.IGNORECASE)
-            #             
-            #             if hours_match:
-            #                 logger.info(f"Found recent posting activity: '{hours_match.group(0)}' (hours ago) on Facebook.")
-            #                 is_active = True
-            #             elif days_match:
-            #                 logger.info(f"Found recent posting activity: '{days_match.group(0)}' (days ago) on Facebook.")
-            #                 is_active = True
-            #             elif ago_match:
-            #                 logger.info(f"Found recent posting activity: '{ago_match.group(0)}' on Facebook.")
-            #                 is_active = True
-            #     except Exception as e:
-            #         logger.error(f"Error checking Facebook activity: {e}")
+            # 3. Check Facebook activity
+            if social_urls["facebook"]:
+                try:
+                    logger.info(f"Checking Facebook page activity: {social_urls['facebook']}")
+                    page.goto(social_urls["facebook"], timeout=8000)
+                    page.wait_for_timeout(2000)
                     
-            # 4. Check Instagram activity (DISABLED for speed, kept for future use)
-            # if not is_active and social_urls["instagram"]:
-            #     try:
-            #         logger.info(f"Checking Instagram page activity: {social_urls['instagram']}")
-            #         page.goto(social_urls["instagram"], timeout=8000)
-            #         page.wait_for_timeout(2000)
-            #         
-            #         html_content = page.content()
-            #         soup = BeautifulSoup(html_content, 'html.parser')
-            #         
-            #         # Look for datetime attributes inside <time> tags
-            #         time_tags = soup.find_all('time')
-            #         for tag in time_tags:
-            #             dt_str = tag.get('datetime')
-            #             if dt_str:
-            #                 try:
-            #                     date_part = dt_str.split('T')[0]
-            #                     post_date = datetime.strptime(date_part, "%Y-%m-%d")
-            #                     if datetime.now() - post_date <= timedelta(days=30):
-            #                         logger.info(f"Found recent Instagram post date: {date_part}")
-            #                         is_active = True
-            #                         break
-            #                 except Exception:
-            #                     pass
-            #                     
-            #         if not is_active:
-            #             page_text = soup.get_text()
-            #             current_month = datetime.now().strftime("%B")
-            #             prev_month = (datetime.now() - timedelta(days=30)).strftime("%B")
-            #             recent_keywords = [
-            #                 "Just now", "yesterday", "hrs ago", "mins ago", "days ago",
-            #                 current_month, prev_month
-            #             ]
-            #             for word in recent_keywords:
-            #                 pattern = re.compile(r'\b' + re.escape(word) + r'\b', re.IGNORECASE)
-            #                 if pattern.search(page_text):
-            #                     logger.info(f"Found recent posting activity indicator keyword: '{word}' on Instagram.")
-            #                     is_active = True
-            #                     break
-            #                     
-            #             if not is_active:
-            #                 hours_match = re.search(r'(?<!\d)([1-9]|1\d|2[0-3])h\b', page_text, re.IGNORECASE)
-            #                 days_match = re.search(r'(?<!\d)([1-9]|[1-2]\d|30)d\b', page_text, re.IGNORECASE)
-            #                 weeks_match = re.search(r'(?<!\d)([1-4])w\b', page_text, re.IGNORECASE)
-            #                 ago_match = re.search(r'\b\d+\s*(hrs?|hours?|days?|mins?|minutes?)\s*ago\b', page_text, re.IGNORECASE)
+                    html_content = page.content()
+                    soup = BeautifulSoup(html_content, 'html.parser')
+                    page_text = soup.get_text()
+                    
+                    current_month = datetime.now().strftime("%B")
+                    prev_month = (datetime.now() - timedelta(days=30)).strftime("%B")
+                    recent_keywords = [
+                        "Just now", "yesterday", "hrs ago", "mins ago", "days ago",
+                        current_month, prev_month
+                    ]
+                    
+                    # Check simple keywords
+                    for word in recent_keywords:
+                        pattern = re.compile(r'\b' + re.escape(word) + r'\b', re.IGNORECASE)
+                        if pattern.search(page_text):
+                            logger.info(f"Found recent posting activity indicator keyword: '{word}' on Facebook.")
+                            is_active = True
+                            break
                             
-            #                 if hours_match:
-            #                     logger.info(f"Found recent posting activity: '{hours_match.group(0)}' on Instagram.")
-            #                     is_active = True
-            #                 elif days_match:
-            #                     logger.info(f"Found recent posting activity: '{days_match.group(0)}' on Instagram.")
-            #                     is_active = True
-            #                 elif weeks_match:
-            #                     logger.info(f"Found recent posting activity: '{weeks_match.group(0)}' on Instagram.")
-            #                     is_active = True
-            #                 elif ago_match:
-            #                     logger.info(f"Found recent posting activity: '{ago_match.group(0)}' on Instagram.")
-            #                     is_active = True
-            #     except Exception as e:
-            #         logger.error(f"Error checking Instagram activity: {e}")
+                    # Check precise regexes (handles layout concatenations like 'account6h')
+                    if not is_active:
+                        hours_match = re.search(r'(?<!\d)([1-9]|1\d|2[0-3])h\b', page_text, re.IGNORECASE)
+                        days_match = re.search(r'(?<!\d)([1-9]|[1-2]\d|30)d\b', page_text, re.IGNORECASE)
+                        ago_match = re.search(r'\b\d+\s*(hrs?|hours?|days?|mins?|minutes?)\s*ago\b', page_text, re.IGNORECASE)
+                        
+                        if hours_match:
+                            logger.info(f"Found recent posting activity: '{hours_match.group(0)}' (hours ago) on Facebook.")
+                            is_active = True
+                        elif days_match:
+                            logger.info(f"Found recent posting activity: '{days_match.group(0)}' (days ago) on Facebook.")
+                            is_active = True
+                        elif ago_match:
+                            logger.info(f"Found recent posting activity: '{ago_match.group(0)}' on Facebook.")
+                            is_active = True
+                except Exception as e:
+                    logger.error(f"Error checking Facebook activity: {e}")
+                    
+            # 4. Check Instagram activity
+            if not is_active and social_urls["instagram"]:
+                try:
+                    logger.info(f"Checking Instagram page activity: {social_urls['instagram']}")
+                    page.goto(social_urls["instagram"], timeout=8000)
+                    page.wait_for_timeout(2000)
+                    
+                    html_content = page.content()
+                    soup = BeautifulSoup(html_content, 'html.parser')
+                    
+                    # Look for datetime attributes inside <time> tags
+                    time_tags = soup.find_all('time')
+                    for tag in time_tags:
+                        dt_str = tag.get('datetime')
+                        if dt_str:
+                            try:
+                                date_part = dt_str.split('T')[0]
+                                post_date = datetime.strptime(date_part, "%Y-%m-%d")
+                                if datetime.now() - post_date <= timedelta(days=30):
+                                    logger.info(f"Found recent Instagram post date: {date_part}")
+                                    is_active = True
+                                    break
+                            except Exception:
+                                pass
+                                
+                    if not is_active:
+                        page_text = soup.get_text()
+                        current_month = datetime.now().strftime("%B")
+                        prev_month = (datetime.now() - timedelta(days=30)).strftime("%B")
+                        recent_keywords = [
+                            "Just now", "yesterday", "hrs ago", "mins ago", "days ago",
+                            current_month, prev_month
+                        ]
+                        for word in recent_keywords:
+                            pattern = re.compile(r'\b' + re.escape(word) + r'\b', re.IGNORECASE)
+                            if pattern.search(page_text):
+                                logger.info(f"Found recent posting activity indicator keyword: '{word}' on Instagram.")
+                                is_active = True
+                                break
+                                
+                        if not is_active:
+                            hours_match = re.search(r'(?<!\d)([1-9]|1\d|2[0-3])h\b', page_text, re.IGNORECASE)
+                            days_match = re.search(r'(?<!\d)([1-9]|[1-2]\d|30)d\b', page_text, re.IGNORECASE)
+                            weeks_match = re.search(r'(?<!\d)([1-4])w\b', page_text, re.IGNORECASE)
+                            ago_match = re.search(r'\b\d+\s*(hrs?|hours?|days?|mins?|minutes?)\s*ago\b', page_text, re.IGNORECASE)
+                            
+                            if hours_match:
+                                logger.info(f"Found recent posting activity: '{hours_match.group(0)}' on Instagram.")
+                                is_active = True
+                            elif days_match:
+                                logger.info(f"Found recent posting activity: '{days_match.group(0)}' on Instagram.")
+                                is_active = True
+                            elif weeks_match:
+                                logger.info(f"Found recent posting activity: '{weeks_match.group(0)}' on Instagram.")
+                                is_active = True
+                            elif ago_match:
+                                logger.info(f"Found recent posting activity: '{ago_match.group(0)}' on Instagram.")
+                                is_active = True
+                except Exception as e:
+                    logger.error(f"Error checking Instagram activity: {e}")
                     
             browser.close()
     except Exception as outer_err:
@@ -193,14 +193,14 @@ def evaluate_social_media_status(website_url: str, school_name: str, area: str) 
             if not domain_only:
                 has_valid_profile = True
                 
-    if has_valid_profile:
+    if has_valid_profile and is_active:
         status_str = "Active"
-        if is_active:
-            remark_str = ""
-        else:
-            remark_str = "Social accounts present but no recent updates found."
+        remark_str = ""
     else:
         status_str = "Inactive"
-        remark_str = ""
+        if has_valid_profile and not is_active:
+            remark_str = "Social accounts present but no recent updates found."
+        else:
+            remark_str = ""
         
     return status_str, remark_str

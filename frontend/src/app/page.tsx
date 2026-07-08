@@ -152,7 +152,7 @@ function CustomSelect({ value, onChange, options, isDarkMode }: CustomSelectProp
         <button
           type="button"
           onClick={() => setIsOpen(!isOpen)}
-          className={`flex items-center justify-between gap-1 border rounded-lg px-2.5 py-1.5 text-[10px] font-bold tracking-wide focus:outline-none transition-all select-none ${
+          className={`flex items-center justify-between gap-1 border rounded-lg px-1.5 py-1.5 text-[10px] font-bold tracking-wide focus:outline-none transition-all select-none ${
             isDarkMode
               ? "bg-zinc-850 border-zinc-700 text-white hover:bg-zinc-800"
               : "bg-white border-zinc-200 text-[#111827] hover:bg-zinc-50"
@@ -176,7 +176,7 @@ function CustomSelect({ value, onChange, options, isDarkMode }: CustomSelectProp
 
       {isOpen && (
         <div
-          className={`absolute right-0 z-50 mt-1.5 w-40 rounded-lg shadow-lg border outline-none py-1 overflow-hidden transition-all ${
+          className={`absolute right-0 z-50 mt-1.5 w-40 rounded-lg shadow-lg border outline-none py-1 overflow-y-auto max-h-56 transition-all ${
             isDarkMode
               ? "bg-zinc-900 border-zinc-800 text-zinc-200"
               : "bg-white border-[#E2E8F0] text-zinc-700"
@@ -261,6 +261,7 @@ export default function LeadGenWorkspace() {
   const [filterStatus, setFilterStatus] = useState("All Stages");
   const [filterAtmosphere, setFilterAtmosphere] = useState("All Atmospheres");
   const [filterAppearance, setFilterAppearance] = useState("All Appearances");
+  const [filterPincode, setFilterPincode] = useState("All Pincodes");
 
   // Scraper inputs
   const [areaInput, setAreaInput] = useState("");
@@ -274,11 +275,11 @@ export default function LeadGenWorkspace() {
 
   // Pagination State
   const [currentPage, setCurrentPage] = useState(1);
-  const pageSize = 5;
+  const pageSize = 30;
 
   useEffect(() => {
     setCurrentPage(1);
-  }, [searchTerm, filterType, filterAppearance, filterAtmosphere]);
+  }, [searchTerm, filterType, filterAppearance, filterAtmosphere, filterPincode]);
 
   // Manual Lead Creation States
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
@@ -286,6 +287,7 @@ export default function LeadGenWorkspace() {
   const [newInstitutionType, setNewInstitutionType] = useState("Matriculation");
   const [newLocation, setNewLocation] = useState("");
   const [newAddress, setNewAddress] = useState("");
+  const [newPincode, setNewPincode] = useState("");
   const [newWebsiteUrl, setNewWebsiteUrl] = useState("");
   const [newContactNumber, setNewContactNumber] = useState("");
   const [newStage, setNewStage] = useState("New Lead");
@@ -389,6 +391,7 @@ export default function LeadGenWorkspace() {
           area_name: newLocation,
           search_area: newLocation,
           address: newAddress || null,
+          pincode: newPincode || null,
           website_url: newWebsiteUrl || null,
           contact_number: newContactNumber || "N/A",
           status: newStage,
@@ -407,6 +410,7 @@ export default function LeadGenWorkspace() {
       setNewSchoolName("");
       setNewLocation("");
       setNewAddress("");
+      setNewPincode("");
       setNewWebsiteUrl("");
       setNewContactNumber("");
       setNewStage("New Lead");
@@ -702,6 +706,7 @@ export default function LeadGenWorkspace() {
       "Contact Number",
       "Area Name",
       "School Address",
+      "Pincode",
       "Institution Type",
       "Appearance",
       "Remarks",
@@ -721,6 +726,7 @@ export default function LeadGenWorkspace() {
         lead.contact_number,
         lead.area_name,
         lead.address || "",
+        lead.pincode || "",
         lead.institution_type,
         lead.appearance,
         lead.remarks,
@@ -909,6 +915,16 @@ export default function LeadGenWorkspace() {
     return Math.round(scores.reduce((a, b) => a + b, 0) / scores.length);
   })();
 
+  // Get unique pincodes from leads
+  const uniquePincodes = Array.from(
+    new Set(leads.map((l) => l.pincode).filter(Boolean))
+  ).sort();
+
+  const pincodeOptions = [
+    { label: "All Pincodes", value: "All Pincodes" },
+    ...uniquePincodes.map((pin) => ({ label: pin, value: pin }))
+  ];
+
   const filteredLeads = leads.filter((lead) => {
     const matchesSearch =
       lead.school_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -929,7 +945,10 @@ export default function LeadGenWorkspace() {
     const matchesAppearance =
       filterAppearance === "All Appearances" || lead.appearance === filterAppearance;
 
-    return matchesSearch && matchesType && matchesStatus && matchesAtmosphere && matchesAppearance;
+    const matchesPincode =
+      filterPincode === "All Pincodes" || lead.pincode === filterPincode;
+
+    return matchesSearch && matchesType && matchesStatus && matchesAtmosphere && matchesAppearance && matchesPincode;
   });
 
   // Funnel numbers
@@ -942,8 +961,14 @@ export default function LeadGenWorkspace() {
 
   const renderLeadsTable = (leadsList: any[], showActions: boolean = false) => {
     return (
-      <div className={`overflow-x-auto border rounded-lg ${isDarkMode ? "border-zinc-800" : "border-[#E2E8F0]"}`}>
-        <table className="w-full text-left text-xs border-collapse">
+      <div 
+        className={`overflow-x-auto border rounded-lg ${isDarkMode ? "border-zinc-800" : "border-[#E2E8F0]"}`}
+        style={{ transform: 'rotateX(180deg)' }}
+      >
+        <table 
+          className="w-full min-w-max text-left text-xs border-collapse"
+          style={{ transform: 'rotateX(180deg)' }}
+        >
           <thead>
             <tr className={`text-[11px] font-bold border-b select-none ${
               isDarkMode 
@@ -960,6 +985,7 @@ export default function LeadGenWorkspace() {
               <th className={`p-3 border-r min-w-[150px] ${isDarkMode ? "border-zinc-800" : "border-[#E2E8F0]"}`}>Website URL</th>
               <th className={`p-3 border-r min-w-[110px] ${isDarkMode ? "border-zinc-800" : "border-[#E2E8F0]"}`}>Contact Number</th>
               <th className={`p-3 border-r min-w-[200px] ${isDarkMode ? "border-zinc-800" : "border-[#E2E8F0]"}`}>School Address</th>
+              <th className={`p-3 border-r min-w-[100px] ${isDarkMode ? "border-zinc-800" : "border-[#E2E8F0]"}`}>Pincode</th>
               <th className={`p-3 text-center border-r min-w-[100px] ${isDarkMode ? "border-zinc-800" : "border-[#E2E8F0]"}`}>Appearance</th>
               <th className={`p-3 min-w-[200px] ${showActions ? `border-r ${isDarkMode ? "border-zinc-800" : "border-[#E2E8F0]"}` : ""}`}>Remarks</th>
               {showActions && (
@@ -973,7 +999,7 @@ export default function LeadGenWorkspace() {
           <tbody className={`divide-y ${isDarkMode ? "divide-zinc-800" : "divide-[#E2E8F0]"}`}>
             {leadsList.length === 0 ? (
               <tr>
-                <td colSpan={showActions ? 14 : 12} className="p-8 text-center text-zinc-400 font-bold">
+                <td colSpan={showActions ? 15 : 13} className="p-8 text-center text-zinc-400 font-bold">
                   No matching leads found.
                 </td>
               </tr>
@@ -1038,6 +1064,7 @@ export default function LeadGenWorkspace() {
                 </td>
                 <td className={`p-3 border-r font-mono font-bold ${isDarkMode ? "border-zinc-800" : "border-[#E2E8F0]"}`}>{lead.contact_number || "N/A"}</td>
                 <td className={`p-3 border-r text-zinc-500 font-semibold break-words max-w-[250px] ${isDarkMode ? "border-zinc-800" : "border-[#E2E8F0]"}`}>{lead.address || "N/A"}</td>
+                <td className={`p-3 border-r font-mono text-zinc-500 font-bold ${isDarkMode ? "border-zinc-800" : "border-[#E2E8F0]"}`}>{lead.pincode || "N/A"}</td>
                 <td className={`p-3 text-center border-r ${isDarkMode ? "border-zinc-800" : "border-[#E2E8F0]"}`}>
                   <span className={`inline-block font-extrabold px-2.5 py-0.5 rounded text-[10px] ${
                     lead.appearance === "Redesign" 
@@ -1957,95 +1984,110 @@ export default function LeadGenWorkspace() {
                 const paginatedLeads = filteredLeads.slice((currentPage - 1) * pageSize, currentPage * pageSize);
                 return (
                   <div className={`border rounded-xl p-5 shadow-sm space-y-4 overflow-hidden ${isDarkMode ? "bg-zinc-900 border-zinc-800 text-white" : "bg-white border-[#E2E8F0] text-[#111827]"}`}>
-                    <div className="flex flex-col xl:flex-row justify-between items-start xl:items-center pb-3 border-b border-[#E2E8F0] dark:border-zinc-800 gap-4 w-full">
+                    <div className="flex flex-col pb-3 border-b border-[#E2E8F0] dark:border-zinc-800 gap-3 w-full">
                       <div>
                         <h3 className="text-xs font-black uppercase tracking-wider text-[#00637C]">Discovered Database Leads ({filteredLeads.length})</h3>
                         <p className="text-[10px] text-zinc-400 mt-0.5 font-medium">Click any row below to open the rich AI Analysis and website preview panel.</p>
                       </div>
 
                       {/* Integrated Filters & Sync Panel inside Card Header */}
-                      <div className="flex flex-wrap items-center gap-2 w-full xl:w-auto">
-                        {/* Search Input */}
-                        <div className="relative w-full sm:w-44 md:w-56">
-                          <Search className="absolute left-2.5 top-2.5 h-3.5 w-3.5 text-zinc-400" />
-                          <input
-                            type="text"
-                            value={searchTerm}
-                            onChange={(e) => setSearchTerm(e.target.value)}
-                            placeholder="Search name or location..."
-                            className={`w-full pl-8 pr-3 py-1.5 border rounded-lg text-[10px] focus:outline-none focus:border-[#00637C] font-semibold transition-all ${
-                              isDarkMode 
-                                ? "bg-zinc-850 border-zinc-700 text-white" 
-                                : "bg-[#F5F7FA] border-zinc-200 text-[#111827]"
-                            }`}
-                          />
+                      <div className="w-full overflow-x-auto pb-48 -mb-48 no-scrollbar scroll-smooth">
+                        <div className="flex items-center justify-between gap-4 min-w-max w-full">
+                          {/* Left Side: Filter Controls */}
+                          <div className="flex items-center gap-1.5 shrink-0">
+                            {/* Search Input */}
+                            <div className="relative w-32 md:w-36 shrink-0">
+                              <Search className="absolute left-2.5 top-2.5 h-3.5 w-3.5 text-zinc-400" />
+                              <input
+                                type="text"
+                                value={searchTerm}
+                                onChange={(e) => setSearchTerm(e.target.value)}
+                                placeholder="Search name or location..."
+                                className={`w-full pl-8 pr-3 py-1.5 border rounded-lg text-[10px] focus:outline-none focus:border-[#00637C] font-semibold transition-all ${
+                                  isDarkMode 
+                                    ? "bg-zinc-850 border-zinc-700 text-white" 
+                                    : "bg-[#F5F7FA] border-zinc-200 text-[#111827]"
+                                }`}
+                              />
+                            </div>
+
+                            {/* Dropdowns */}
+                            <CustomSelect
+                              value={filterType}
+                              onChange={setFilterType}
+                              options={[
+                                { label: "All Types", value: "All Types" },
+                                { label: "CBSE", value: "CBSE" },
+                                { label: "Matriculation", value: "Matriculation" },
+                                { label: "International", value: "International" }
+                              ]}
+                              isDarkMode={isDarkMode}
+                            />
+
+                            <CustomSelect
+                              value={filterAppearance}
+                              onChange={setFilterAppearance}
+                              options={[
+                                { label: "All Appearances", value: "All Appearances" },
+                                { label: "Good Site", value: "Good" },
+                                { label: "Redesign Site", value: "Redesign" },
+                                { label: "No Site", value: "Fresh" }
+                              ]}
+                              isDarkMode={isDarkMode}
+                            />
+
+                            <CustomSelect
+                              value={filterAtmosphere}
+                              onChange={setFilterAtmosphere}
+                              options={[
+                                { label: "All Atmospheres", value: "All Atmospheres" },
+                                { label: "Atmosphere: Good", value: "Good" },
+                                { label: "Atmosphere: Bad", value: "Bad" }
+                              ]}
+                              isDarkMode={isDarkMode}
+                            />
+
+                            <CustomSelect
+                              value={filterPincode}
+                              onChange={setFilterPincode}
+                              options={pincodeOptions}
+                              isDarkMode={isDarkMode}
+                            />
+                          </div>
+
+                          {/* Right Side: Action Buttons */}
+                          <div className="flex items-center gap-1.5 shrink-0">
+                            <button
+                              onClick={handleSyncSheets}
+                              className="bg-[#00637C] hover:bg-[#004d60] text-white px-2 py-1.5 rounded-lg text-[10px] font-bold transition-all flex items-center gap-1 shadow-sm shrink-0 border border-[#00637C]"
+                            >
+                              <RefreshCw className="h-3 w-3" /> Sync Sheets
+                            </button>
+
+                            <button
+                              onClick={handleDownloadCSV}
+                              className={`px-2 py-1.5 rounded-lg text-[10px] font-bold transition-all flex items-center gap-1 shadow-sm shrink-0 border ${
+                                isDarkMode
+                                  ? "bg-zinc-850 border-zinc-700 text-zinc-200 hover:bg-zinc-700"
+                                  : "bg-[#e0f2f6] border-[#00637C]/20 text-[#00637C] hover:bg-[#cbeaf0]"
+                              }`}
+                            >
+                              <Download className="h-3 w-3" /> Download CSV
+                            </button>
+
+                            <button
+                              onClick={handleDeleteAllLeads}
+                              disabled={leads.length === 0}
+                              className={`px-2 py-1.5 rounded-lg text-[10px] font-bold transition-all flex items-center gap-1 shadow-sm shrink-0 border disabled:opacity-50 disabled:cursor-not-allowed ${
+                                isDarkMode
+                                  ? "bg-red-950/20 border-red-500/30 text-red-400 hover:bg-red-950/40 hover:text-red-300"
+                                  : "bg-red-50 border-red-200 text-red-600 hover:bg-red-100 hover:text-red-700"
+                              }`}
+                            >
+                              <Trash2 className="h-3 w-3" /> Delete All
+                            </button>
+                          </div>
                         </div>
-
-                        {/* Dropdowns */}
-                        <CustomSelect
-                          value={filterType}
-                          onChange={setFilterType}
-                          options={[
-                            { label: "All Types", value: "All Types" },
-                            { label: "CBSE", value: "CBSE" },
-                            { label: "Matriculation", value: "Matriculation" },
-                            { label: "International", value: "International" }
-                          ]}
-                          isDarkMode={isDarkMode}
-                        />
-
-                        <CustomSelect
-                          value={filterAppearance}
-                          onChange={setFilterAppearance}
-                          options={[
-                            { label: "All Appearances", value: "All Appearances" },
-                            { label: "Good Site", value: "Good" },
-                            { label: "Redesign Site", value: "Redesign" },
-                            { label: "No Site", value: "Fresh" }
-                          ]}
-                          isDarkMode={isDarkMode}
-                        />
-
-                        <CustomSelect
-                          value={filterAtmosphere}
-                          onChange={setFilterAtmosphere}
-                          options={[
-                            { label: "All Atmospheres", value: "All Atmospheres" },
-                            { label: "Atmosphere: Good", value: "Good" },
-                            { label: "Atmosphere: Bad", value: "Bad" }
-                          ]}
-                          isDarkMode={isDarkMode}
-                        />
-
-                        <button
-                          onClick={handleSyncSheets}
-                          className="bg-[#00637C] hover:bg-[#004d60] text-white px-3.5 py-1.5 rounded-lg text-[10px] font-bold transition-all flex items-center gap-1 shadow-sm shrink-0 border border-[#00637C]"
-                        >
-                          <RefreshCw className="h-3 w-3" /> Sync Sheets
-                        </button>
-
-                        <button
-                          onClick={handleDownloadCSV}
-                          className={`px-3.5 py-1.5 rounded-lg text-[10px] font-bold transition-all flex items-center gap-1 shadow-sm shrink-0 border ${
-                            isDarkMode
-                              ? "bg-zinc-800 border-zinc-700 text-zinc-200 hover:bg-zinc-700"
-                              : "bg-[#e0f2f6] border-[#00637C]/20 text-[#00637C] hover:bg-[#cbeaf0]"
-                          }`}
-                        >
-                          <Download className="h-3 w-3" /> Download CSV
-                        </button>
-
-                        <button
-                          onClick={handleDeleteAllLeads}
-                          disabled={leads.length === 0}
-                          className={`px-3.5 py-1.5 rounded-lg text-[10px] font-bold transition-all flex items-center gap-1 shadow-sm shrink-0 border disabled:opacity-50 disabled:cursor-not-allowed ${
-                            isDarkMode
-                              ? "bg-red-950/20 border-red-500/30 text-red-400 hover:bg-red-950/40 hover:text-red-300"
-                              : "bg-red-50 border-red-200 text-red-600 hover:bg-red-100 hover:text-red-700"
-                          }`}
-                        >
-                          <Trash2 className="h-3 w-3" /> Delete All
-                        </button>
                       </div>
                     </div>
 
@@ -2329,6 +2371,13 @@ export default function LeadGenWorkspace() {
                     </div>
                   </div>
                   <div className="flex items-start gap-2.5 border-t border-zinc-200/60 dark:border-zinc-800/65 pt-2.5">
+                    <MapPin className="h-4 w-4 text-[#00637C] shrink-0 mt-0.5" />
+                    <div>
+                      <span className="text-[10px] text-zinc-400 font-bold block">Postal Pincode</span>
+                      <span className="text-xs font-bold mt-0.5 block font-mono">{selectedLead.pincode || "N/A"}</span>
+                    </div>
+                  </div>
+                  <div className="flex items-start gap-2.5 border-t border-zinc-200/60 dark:border-zinc-800/65 pt-2.5">
                     <Mail className="h-4 w-4 text-[#00637C] shrink-0 mt-0.5" />
                     <div>
                       <span className="text-[10px] text-zinc-400 font-bold block">Contact Phone</span>
@@ -2598,6 +2647,23 @@ export default function LeadGenWorkspace() {
                         : "bg-[#F8FAFC] border-zinc-200 text-[#111827]"
                     }`}
                     rows={2}
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-[9px] font-bold uppercase tracking-wider text-zinc-400 mb-1">
+                    Pincode
+                  </label>
+                  <input
+                    type="text"
+                    value={newPincode}
+                    onChange={(e) => setNewPincode(e.target.value)}
+                    placeholder="e.g. 600130"
+                    className={`w-full border rounded-xl px-3.5 py-2 text-xs focus:outline-none focus:border-[#00637C] focus:ring-1 focus:ring-[#00637C] font-semibold transition-all ${
+                      isDarkMode 
+                        ? "bg-zinc-850 border-zinc-700 text-white" 
+                        : "bg-[#F8FAFC] border-zinc-200 text-[#111827]"
+                    }`}
                   />
                 </div>
 
