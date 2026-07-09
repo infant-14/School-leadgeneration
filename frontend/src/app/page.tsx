@@ -361,9 +361,47 @@ export default function LeadGenWorkspace() {
   const wsRef = useRef<WebSocket | null>(null);
   const consoleEndRef = useRef<HTMLDivElement | null>(null);
 
-  // const API_BASE = process.env.NEXT_PUBLIC_API_BASE || "https://jlglzg4d-8080.inc1.devtunnels.ms/api";
+  // Synchronized scrollbar refs and state
+  const topScrollRef = useRef<HTMLDivElement>(null);
+  const tableContainerRef = useRef<HTMLDivElement>(null);
+  const [tableScrollWidth, setTableScrollWidth] = useState(0);
+
+  useEffect(() => {
+    const updateWidth = () => {
+      if (tableContainerRef.current) {
+        setTableScrollWidth(tableContainerRef.current.scrollWidth);
+      }
+    };
+    
+    updateWidth();
+    
+    if (typeof window !== "undefined" && tableContainerRef.current) {
+      const observer = new ResizeObserver(updateWidth);
+      observer.observe(tableContainerRef.current);
+      return () => observer.disconnect();
+    }
+  }, [leads, activeTab]);
+
+  const handleTopScroll = () => {
+    if (topScrollRef.current && tableContainerRef.current) {
+      if (tableContainerRef.current.scrollLeft !== topScrollRef.current.scrollLeft) {
+        tableContainerRef.current.scrollLeft = topScrollRef.current.scrollLeft;
+      }
+    }
+  };
+
+  const handleTableScroll = () => {
+    if (topScrollRef.current && tableContainerRef.current) {
+      if (topScrollRef.current.scrollLeft !== tableContainerRef.current.scrollLeft) {
+        topScrollRef.current.scrollLeft = tableContainerRef.current.scrollLeft;
+      }
+    }
+  };
+
   const API_BASE =
-    process.env.NEXT_PUBLIC_API_BASE || "http://localhost:8080/api";
+    process.env.NEXT_PUBLIC_API_BASE ||
+    "https://jlglzg4d-8080.inc1.devtunnels.ms/api";
+  // const API_BASE = process.env.NEXT_PUBLIC_API_BASE || "http://localhost:8080/api";
 
   // Fetch leads on mount and whenever tab changes
   useEffect(() => {
@@ -1102,14 +1140,28 @@ export default function LeadGenWorkspace() {
 
   const renderLeadsTable = (leadsList: any[], showActions: boolean = false) => {
     return (
-      <div
-        className={`overflow-x-auto border rounded-lg ${isDarkMode ? "border-zinc-800" : "border-[#E2E8F0]"}`}
-        style={{ transform: "rotateX(180deg)" }}
-      >
-        <table
-          className="w-full min-w-max text-left text-xs border-collapse"
-          style={{ transform: "rotateX(180deg)" }}
+      <div className="flex flex-col w-full gap-[2px]">
+        {/* Top dummy scrollbar */}
+        <div
+          ref={topScrollRef}
+          onScroll={handleTopScroll}
+          className="overflow-x-auto overflow-y-hidden top-scrollbar"
+          style={{ width: "100%", height: "8px" }}
         >
+          <div style={{ width: `${tableScrollWidth}px`, height: "1px" }} />
+        </div>
+
+        {/* Scrollable table container */}
+        <div
+          ref={tableContainerRef}
+          onScroll={handleTableScroll}
+          className={`overflow-auto border rounded-lg max-h-[calc(100vh-320px)] crm-table-container ${
+            isDarkMode ? "border-zinc-800 bg-zinc-900" : "border-[#E2E8F0] bg-white"
+          }`}
+        >
+          <table
+            className="w-full min-w-max text-left text-xs border-collapse"
+          >
           <thead>
             <tr
               className={`text-[11px] font-bold border-b select-none ${
@@ -1119,78 +1171,84 @@ export default function LeadGenWorkspace() {
               }`}
             >
               <th
-                className={`p-3 text-center border-r w-12 ${isDarkMode ? "border-zinc-800" : "border-[#E2E8F0]"}`}
+                className={`sticky top-0 z-10 p-3 text-center border-b border-r w-12 ${isDarkMode ? "bg-zinc-850 border-zinc-800 text-zinc-300" : "bg-zinc-50 border-[#E2E8F0] text-zinc-500"}`}
               >
                 S.No.
               </th>
               <th
-                className={`p-3 border-r min-w-[150px] ${isDarkMode ? "border-zinc-800" : "border-[#E2E8F0]"}`}
+                className={`sticky top-0 z-10 p-3 border-b border-r min-w-[150px] ${isDarkMode ? "bg-zinc-850 border-zinc-800 text-zinc-300" : "bg-zinc-50 border-[#E2E8F0] text-zinc-500"}`}
               >
                 School Name
               </th>
               <th
-                className={`p-3 border-r min-w-[120px] ${isDarkMode ? "border-zinc-800" : "border-[#E2E8F0]"}`}
+                className={`sticky top-0 z-10 p-3 border-b border-r min-w-[120px] ${isDarkMode ? "bg-zinc-850 border-zinc-800 text-zinc-300" : "bg-zinc-50 border-[#E2E8F0] text-zinc-500"}`}
               >
                 Customer Name
               </th>
               <th
-                className={`p-3 text-center border-r min-w-[120px] ${isDarkMode ? "border-zinc-800" : "border-[#E2E8F0]"}`}
+                className={`sticky top-0 z-10 p-3 text-center border-b border-r min-w-[120px] ${isDarkMode ? "bg-zinc-850 border-zinc-800 text-zinc-300" : "bg-zinc-50 border-[#E2E8F0] text-zinc-500"}`}
               >
                 Institution Type
               </th>
               <th
-                className={`p-3 text-center border-r min-w-[100px] ${isDarkMode ? "border-zinc-800" : "border-[#E2E8F0]"}`}
+                className={`sticky top-0 z-10 p-3 text-center border-b border-r min-w-[100px] ${isDarkMode ? "bg-zinc-850 border-zinc-800 text-zinc-300" : "bg-zinc-50 border-[#E2E8F0] text-zinc-500"}`}
               >
                 Social Media
               </th>
               <th
-                className={`p-3 border-r min-w-[100px] ${isDarkMode ? "border-zinc-800" : "border-[#E2E8F0]"}`}
+                className={`sticky top-0 z-10 p-3 border-b border-r min-w-[100px] ${isDarkMode ? "bg-zinc-850 border-zinc-800 text-zinc-300" : "bg-zinc-50 border-[#E2E8F0] text-zinc-500"}`}
               >
                 Area Name
               </th>
               <th
-                className={`p-3 text-center border-r min-w-[140px] ${isDarkMode ? "border-zinc-800" : "border-[#E2E8F0]"}`}
+                className={`sticky top-0 z-10 p-3 text-center border-b border-r min-w-[140px] ${isDarkMode ? "bg-zinc-850 border-zinc-800 text-zinc-300" : "bg-zinc-50 border-[#E2E8F0] text-zinc-500"}`}
               >
                 Institution Atmosphere
               </th>
               <th
-                className={`p-3 border-r min-w-[150px] ${isDarkMode ? "border-zinc-800" : "border-[#E2E8F0]"}`}
+                className={`sticky top-0 z-10 p-3 border-b border-r min-w-[150px] ${isDarkMode ? "bg-zinc-850 border-zinc-800 text-zinc-300" : "bg-zinc-50 border-[#E2E8F0] text-zinc-500"}`}
               >
                 Website URL
               </th>
               <th
-                className={`p-3 border-r min-w-[110px] ${isDarkMode ? "border-zinc-800" : "border-[#E2E8F0]"}`}
+                className={`sticky top-0 z-10 p-3 border-b border-r min-w-[110px] ${isDarkMode ? "bg-zinc-850 border-zinc-800 text-zinc-300" : "bg-zinc-50 border-[#E2E8F0] text-zinc-500"}`}
               >
                 Contact Number
               </th>
               <th
-                className={`p-3 border-r min-w-[200px] ${isDarkMode ? "border-zinc-800" : "border-[#E2E8F0]"}`}
+                className={`sticky top-0 z-10 p-3 border-b border-r min-w-[200px] ${isDarkMode ? "bg-zinc-850 border-zinc-800 text-zinc-300" : "bg-zinc-50 border-[#E2E8F0] text-zinc-500"}`}
               >
                 School Address
               </th>
               <th
-                className={`p-3 border-r min-w-[100px] ${isDarkMode ? "border-zinc-800" : "border-[#E2E8F0]"}`}
+                className={`sticky top-0 z-10 p-3 border-b border-r min-w-[100px] ${isDarkMode ? "bg-zinc-850 border-zinc-800 text-zinc-300" : "bg-zinc-50 border-[#E2E8F0] text-zinc-500"}`}
               >
                 Pincode
               </th>
               <th
-                className={`p-3 text-center border-r min-w-[100px] ${isDarkMode ? "border-zinc-800" : "border-[#E2E8F0]"}`}
+                className={`sticky top-0 z-10 p-3 text-center border-b border-r min-w-[100px] ${isDarkMode ? "bg-zinc-850 border-zinc-800 text-zinc-300" : "bg-zinc-50 border-[#E2E8F0] text-zinc-500"}`}
               >
                 Appearance
               </th>
               <th
-                className={`p-3 min-w-[200px] ${showActions ? `border-r ${isDarkMode ? "border-zinc-800" : "border-[#E2E8F0]"}` : ""}`}
+                className={`sticky top-0 z-10 p-3 border-b min-w-[200px] ${
+                  showActions ? "border-r" : ""
+                } ${isDarkMode ? "bg-zinc-850 border-zinc-800 text-zinc-300" : "bg-zinc-50 border-[#E2E8F0] text-zinc-500"}`}
               >
                 Remarks
               </th>
               {showActions && (
                 <>
                   <th
-                    className={`p-3 text-center border-r min-w-[125px] ${isDarkMode ? "border-zinc-800" : "border-[#E2E8F0]"}`}
+                    className={`sticky top-0 z-10 p-3 text-center border-b border-r min-w-[125px] ${isDarkMode ? "bg-zinc-850 border-zinc-800 text-zinc-300" : "bg-zinc-50 border-[#E2E8F0] text-zinc-500"}`}
                   >
                     Stage
                   </th>
-                  <th className="p-3 text-center min-w-[80px]">Action</th>
+                  <th
+                    className={`sticky top-0 z-10 p-3 text-center border-b min-w-[80px] ${isDarkMode ? "bg-zinc-850 border-zinc-800 text-zinc-300" : "bg-zinc-50 border-[#E2E8F0] text-zinc-500"}`}
+                  >
+                    Action
+                  </th>
                 </>
               )}
             </tr>
@@ -1377,6 +1435,7 @@ export default function LeadGenWorkspace() {
             )}
           </tbody>
         </table>
+      </div>
       </div>
     );
   };

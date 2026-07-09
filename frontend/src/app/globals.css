@@ -62,3 +62,41 @@ body {
   }
 }
 
+/* Top Horizontal Scrollbar styling */
+.top-scrollbar::-webkit-scrollbar {
+  height: 8px !important;
+}
+.top-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+.top-scrollbar::-webkit-scrollbar-thumb {
+  background-color: rgba(156, 163, 175, 0.4);
+  border-radius: 9999px;
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+.top-scrollbar::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(156, 163, 175, 0.7);
+}
+
+/* CRM Enterprise Table Scrollbars */
+.crm-table-container::-webkit-scrollbar {
+  height: 8px !important;  /* User-friendly thicker horizontal scrollbar at bottom */
+  width: 8px !important;   /* Sleek vertical scrollbar on the right */
+}
+.crm-table-container::-webkit-scrollbar-track {
+  background: transparent;
+}
+.crm-table-container::-webkit-scrollbar-thumb {
+  background-color: rgba(156, 163, 175, 0.4);
+  border-radius: 9999px;
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+.crm-table-container::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(156, 163, 175, 0.7);
+}
+
+
+
+
