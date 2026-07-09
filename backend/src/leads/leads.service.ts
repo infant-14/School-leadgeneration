@@ -35,13 +35,13 @@ export class LeadsService {
           { ...where, address: Like(`%${search}%`) },
           { ...where, remarks: Like(`%${search}%`) },
         ],
-        order: { id: 'DESC' },
+        order: { batch_id: 'DESC', id: 'ASC' },
       });
     }
 
     return this.leadsRepository.find({
       where,
-      order: { id: 'DESC' },
+      order: { batch_id: 'DESC', id: 'ASC' },
     });
   }
 
@@ -74,7 +74,7 @@ export class LeadsService {
     try {
       const leads = await this.leadsRepository.find({
         where: { userId: userId === null ? IsNull() : userId },
-        order: { id: 'DESC' }
+        order: { batch_id: 'DESC', id: 'ASC' }
       });
       const exportPath = path.join(this.rootDir, 'school_leads_export.xlsx');
 
@@ -243,7 +243,7 @@ export class LeadsService {
     try {
       const leads = await this.leadsRepository.find({
         where: { userId: userId === null ? IsNull() : userId },
-        order: { id: 'DESC' }
+        order: { batch_id: 'DESC', id: 'ASC' }
       });
 
       const auth = new google.auth.GoogleAuth({
