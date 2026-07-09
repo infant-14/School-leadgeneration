@@ -53,6 +53,9 @@ export class Lead {
   @Column({ default: 'New Lead' })
   status: string;
 
+  @Column({ type: 'bigint', nullable: true })
+  batch_id: number | null;
+
   @CreateDateColumn()
   created_at: Date;
 }

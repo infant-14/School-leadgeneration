@@ -9,7 +9,14 @@ def scrape_google_maps_leads(area: str, school_type: str, max_results: int = 15)
     Scrapes school leads from Google Maps using Playwright.
     Returns a list of dictionaries with school details.
     """
-    query = f"{school_type} in {area}"
+    st_clean = school_type.strip().lower()
+    # Normalize school_type: if it doesn't contain "school" or similar keywords, append "schools"
+    if not any(k in st_clean for k in ["school", "academy", "institution", "college"]):
+        query_type = f"{school_type} schools"
+    else:
+        query_type = school_type
+        
+    query = f"{query_type} in {area}"
     search_url = f"https://www.google.com/maps/search/{urllib.parse.quote_plus(query)}"
     logger.info(f"Starting Google Maps search for: {query}")
     logger.info(f"Search URL: {search_url}")
@@ -83,8 +90,20 @@ def scrape_google_maps_leads(area: str, school_type: str, max_results: int = 15)
                 }}
                 """
             )
+            try:
+                # Hover over the feed container to focus the scroll context, then scroll and press PageDown
+                feed_el = page.query_selector(scrollable_selector)
+                if feed_el:
+                    feed_el.hover()
+                    page.mouse.wheel(0, 1500)
+                    feed_el.press("PageDown")
+                    page.wait_for_timeout(500)
+                    feed_el.press("PageDown")
+            except Exception as scroll_err:
+                logger.debug(f"Keyboard scroll error: {scroll_err}")
+                
             # Wait for lazy loading to fetch and render new elements
-            page.wait_for_timeout(2500)
+            page.wait_for_timeout(2000)
             
             # Check if height changed
             new_height = page.evaluate(f"document.querySelector('{scrollable_selector}').scrollHeight")

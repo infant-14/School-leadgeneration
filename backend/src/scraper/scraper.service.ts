@@ -130,6 +130,7 @@ export class ScraperService {
             try {
               const leads = JSON.parse(jsonString);
               this.scraperGateway.broadcast(`> Scraper finished! Syncing ${leads.length} leads to database...`);
+              const batchId = Date.now(); // Generate a unique batch timestamp
               for (const item of leads) {
                 // Check if existing lead belonging to this user
                 const existing = await this.leadsRepository.findOne({ 
@@ -151,6 +152,7 @@ export class ScraperService {
                     social_media: item.social_media || 'Inactive',
                     google_rating: item.google_rating || '',
                     photo_url: item.photo_url || '',
+                    batch_id: batchId, // Update batch ID to represent the newest scrape session
                   });
                   await this.leadsRepository.save(existing);
                 } else {
@@ -172,6 +174,7 @@ export class ScraperService {
                     google_rating: item.google_rating || '',
                     photo_url: item.photo_url || '',
                     status: 'New Lead',
+                    batch_id: batchId, // Set batch ID to current session
                   });
                   await this.leadsRepository.save(newLead);
                 }

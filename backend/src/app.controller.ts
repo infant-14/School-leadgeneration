@@ -56,7 +56,12 @@ export class AppController {
     }
 
     // 2. Check user database records
-    const user = await this.userRepository.findOne({ where: { username } });
+    const user = await this.userRepository.findOne({
+      where: [
+        { username },
+        { email: username }
+      ]
+    });
     if (user && user.password === password) {
       return {
         success: true,
