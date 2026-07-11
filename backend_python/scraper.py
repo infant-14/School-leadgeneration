@@ -109,8 +109,21 @@ def scrape_google_maps_leads(area: str, school_type: str, max_results: int = 15)
             new_height = page.evaluate(f"document.querySelector('{scrollable_selector}').scrollHeight")
             if new_height == last_height:
                 no_change_count += 1
-                logger.info(f"Scroll height did not change (attempt {no_change_count}/4). Waiting for results...")
-                if no_change_count >= 4:
+                logger.info(f"Scroll height did not change (attempt {no_change_count}/6). Waiting for results...")
+                
+                # Scroll up slightly and down to nudge lazy load event listener
+                if no_change_count > 1:
+                    page.evaluate(
+                        f"""
+                        const feed = document.querySelector('{scrollable_selector}');
+                        if (feed) {{
+                            feed.scrollTo(0, feed.scrollHeight - 500);
+                            setTimeout(() => {{ feed.scrollTo(0, feed.scrollHeight); }}, 100);
+                        }}
+                        """
+                    )
+                
+                if no_change_count >= 6:
                     logger.info("Reached the absolute end of the results list.")
                     break
             else:

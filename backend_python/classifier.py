@@ -485,9 +485,15 @@ def extract_address_fallback_rules(text: str, search_area: str) -> dict:
         
         # Phone heuristic: search for 8-11 digit numbers
         phone = ""
-        phone_match = re.search(r'\b(0\d{2,4}[-\s]?\d{6,8}|[6-9]\d{9}|\+91[-\s]?\d{10})\b', normalized_text)
-        if phone_match:
-            phone = phone_match.group(0)
+        found_phones = []
+        for match in re.finditer(r'\b(0\d{2,4}[-\s]?\d{6,8}|[6-9]\d{9}|\+91[-\s]?\d{10})\b', normalized_text):
+            num = match.group(0).strip()
+            digits = "".join(filter(str.isdigit, num))
+            unique_suffix = digits[-10:] if len(digits) >= 10 else digits
+            if unique_suffix and not any("".join(filter(str.isdigit, f))[-10:] == unique_suffix for f in found_phones):
+                found_phones.append(num)
+        if found_phones:
+            phone = " / ".join(found_phones[:3])
             
         return {
             "address": best_candidate,
@@ -520,12 +526,12 @@ def extract_info_from_website_text(text: str, gmaps_address: str, gmaps_phone: s
         
     prompt = (
         "You are an information extraction assistant. Analyze the following text extracted from a school's website "
-        "and find the school's full address, the 6-digit postal pincode, the specific local area/neighborhood name corresponding to that address, and the contact phone number.\n\n"
+        "and find the school's full address, the 6-digit postal pincode, the specific local area/neighborhood name corresponding to that address, and the contact phone numbers.\n\n"
         "Instructions:\n"
         "1. Extract the school's postal address from the website text. If the website text does not contain a full/postal address, return null in the 'address' field. (Do NOT use Google Maps reference or any other source to guess the address if not in the text).\n"
         "2. Extract the 6-digit postal pincode from the website text. If not found, return null in the 'pincode' field.\n"
         "3. Extract the local area/neighborhood name (e.g. Sholinganallur, Medavakkam, Srirangam, Tambaram, etc.) that the pincode and address refer to. If not found, return null in the 'area_name' field.\n"
-        "4. Extract the contact phone number from the website text. If not found, return null in the 'contact_number' field.\n\n"
+        "4. Extract all contact phone numbers from the website text. If multiple phone numbers are found, return them joined by ' / ' (e.g. '044-1234567 / 9876543210'). If not found, return null in the 'contact_number' field.\n\n"
         "Return the result as a simple JSON object with exactly four keys: 'contact_number', 'address', 'pincode', and 'area_name'.\n"
         f"Website text content:\n{cleaned_text}"
     )
@@ -672,43 +678,70 @@ def evaluate_website_screenshot(website_url: str) -> tuple:
         feedbacks = []
         appearance_res = "Good"
         
-        if website_url.startswith("http://"):
-            feedbacks.append("Insecure connection (HTTP)")
-            appearance_res = "Redesign"
+        # Check if the page is parked, inactive, or expired
+        text = ((audit_stats.get("title", "") if audit_stats else "") + " " + website_text).lower()
+        is_parked = False
+        parked_keywords = [
+            "domain is for sale", "domain expired", "domain parked", "godaddy",
+            "buy this domain", "parking page", "hostgator", "namesilo", "namecheap",
+            "bluehost", "under construction", "parked free", "this page is parked",
+            "site is under construction", "domain name is for sale"
+        ]
+        
+        text_len = audit_stats.get("textLength", 0) if audit_stats else len(website_text)
+        if any(kw in text for kw in parked_keywords) or (0 < text_len < 150):
+            is_parked = True
             
-        if audit_stats:
-            if not audit_stats.get("hasViewport", True):
-                feedbacks.append("Lacks mobile responsiveness support")
-                appearance_res = "Redesign"
-            if not audit_stats.get("metaDesc"):
-                feedbacks.append("Missing SEO meta description")
-            if audit_stats.get("textLength", 1000) < 600:
-                feedbacks.append("Thin content page")
-                appearance_res = "Redesign"
-            if not audit_stats.get("hasSocialLinks", True):
-                feedbacks.append("Missing social media profile links")
-            cpy = audit_stats.get("copyrightYear")
-            if cpy and int(cpy) < 2025:
-                feedbacks.append(f"Outdated copyright year ({cpy})")
-                appearance_res = "Redesign"
-        else:
-            feedbacks.append("Website content loaded incorrectly")
+        if is_parked:
+            feedbacks.append("Website domain is parked, inactive, or expired")
             appearance_res = "Redesign"
+        else:
+            if website_url.startswith("http://"):
+                feedbacks.append("Insecure connection (HTTP)")
+                appearance_res = "Redesign"
+                
+            if audit_stats:
+                if not audit_stats.get("hasViewport", True):
+                    feedbacks.append("Lacks mobile responsiveness support")
+                    appearance_res = "Redesign"
+                if not audit_stats.get("metaDesc"):
+                    feedbacks.append("Missing SEO meta description")
+                if audit_stats.get("textLength", 1000) < 600:
+                    feedbacks.append("Thin content page")
+                    appearance_res = "Redesign"
+                if not audit_stats.get("hasSocialLinks", True):
+                    feedbacks.append("Missing social media profile links")
+                cpy = audit_stats.get("copyrightYear")
+                if cpy and int(cpy) < 2025:
+                    feedbacks.append(f"Outdated copyright year ({cpy})")
+                    appearance_res = "Redesign"
+            else:
+                feedbacks.append("Website content loaded incorrectly")
+                appearance_res = "Redesign"
             
         if not feedbacks:
-            remarks_res = "Website looks modern, secure, and responsive."
+            remarks_res = "• Website looks modern, secure, and responsive."
         else:
-            remarks_res = " | ".join(feedbacks) + ". Suggest layout refresh."
+            remarks_res = "\n".join([f"• {f}" for f in feedbacks])
             
         return appearance_res, remarks_res, website_text
 
     prompt = (
-        "You are an expert website designer reviewing school websites to see if they need redesign services. "
+        "You are an expert website designer reviewing school websites to identify specific design and layout issues for redesign services. "
         "Look at this screenshot of the school website. "
         "1. Is the design modern, clean, mobile-friendly and professional? Choose either 'Good' or 'Redesign'. "
-        "2. Provide a 1-sentence friendly remark recommending what to improve (e.g. 'Need to improve the design, update layout, make mobile friendly' or 'Website looks professional'). "
+        "2. Provide a list of specific, detailed visual/functional issues found, formatted as bullet points (using the '•' character, each issue on a new line). "
+        "Identify exact problems if any, such as:\n"
+        "- Content too large / overlapping elements\n"
+        "- Spacing issues / poor margins\n"
+        "- Low resolution images / needs improvement\n"
+        "- Outdated fonts / poor typography\n"
+        "- Cluttered layout / confusing navigation\n"
+        "- Lacks mobile responsiveness\n"
+        "- Website domain is parked, inactive, or expired (if the site shows a parked domain, expired page, GoDaddy hosting default page, or error screen)\n"
+        "If the website looks perfect, write '• Website looks professional and modern.'\n"
         "Format your response as a simple JSON object containing keys 'appearance' and 'remarks'. For example:\n"
-        '{"appearance": "Redesign", "remarks": "Need to improve the design and update the layout."}'
+        '{"appearance": "Redesign", "remarks": "• Content too large\\n• Spacing issues\\n• Needs image improvement"}'
     )
 
     # 4. Use Gemini Vision to evaluate screenshot (Primary if key exists)
@@ -761,7 +794,57 @@ def evaluate_website_screenshot(website_url: str) -> tuple:
         except Exception as e:
             logger.error(f"Ollama failure during web audit: {e}")
 
-    return "Redesign", "Need to improve the design", website_text
+    # 7. Final fallback: Run technical audit generator when AI fails/is skipped to provide specific bullet points
+    feedbacks = []
+    appearance_res = "Good"
+    
+    # Check if the page is parked, inactive, or expired
+    text = ((audit_stats.get("title", "") if audit_stats else "") + " " + website_text).lower()
+    is_parked = False
+    parked_keywords = [
+        "domain is for sale", "domain expired", "domain parked", "godaddy",
+        "buy this domain", "parking page", "hostgator", "namesilo", "namecheap",
+        "bluehost", "under construction", "parked free", "this page is parked",
+        "site is under construction", "domain name is for sale"
+    ]
+    
+    text_len = audit_stats.get("textLength", 0) if audit_stats else len(website_text)
+    if any(kw in text for kw in parked_keywords) or (0 < text_len < 150):
+        is_parked = True
+        
+    if is_parked:
+        feedbacks.append("Website domain is parked, inactive, or expired")
+        appearance_res = "Redesign"
+    else:
+        if website_url.startswith("http://"):
+            feedbacks.append("Insecure connection (HTTP)")
+            appearance_res = "Redesign"
+            
+        if audit_stats:
+            if not audit_stats.get("hasViewport", True):
+                feedbacks.append("Lacks mobile responsiveness support")
+                appearance_res = "Redesign"
+            if not audit_stats.get("metaDesc"):
+                feedbacks.append("Missing SEO meta description")
+            if audit_stats.get("textLength", 1000) < 600:
+                feedbacks.append("Thin content page")
+                appearance_res = "Redesign"
+            if not audit_stats.get("hasSocialLinks", True):
+                feedbacks.append("Missing social media profile links")
+            cpy = audit_stats.get("copyrightYear")
+            if cpy and int(cpy) < 2025:
+                feedbacks.append(f"Outdated copyright year ({cpy})")
+                appearance_res = "Redesign"
+        else:
+            feedbacks.append("Website content loaded incorrectly")
+            appearance_res = "Redesign"
+
+    if not feedbacks:
+        remarks_res = "• Website looks modern, secure, and responsive."
+    else:
+        remarks_res = "\n".join([f"• {f}" for f in feedbacks])
+
+    return appearance_res, remarks_res, website_text
 
 def _fallback_atmosphere_rating(rating: str) -> str:
     if rating:

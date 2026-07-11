@@ -35,6 +35,13 @@ def init_db():
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )
     """)
+    
+    # Add social_media_urls column to SQLite table if it is missing
+    try:
+        cursor.execute("ALTER TABLE leads ADD COLUMN social_media_urls TEXT")
+    except sqlite3.OperationalError:
+        pass # Column already exists
+        
     conn.commit()
     conn.close()
 
@@ -60,6 +67,7 @@ def save_or_update_lead(lead: dict):
                     remarks = ?,
                     atmosphere = ?,
                     social_media = ?,
+                    social_media_urls = ?,
                     google_rating = ?,
                     photo_url = ?
                 WHERE id = ?
@@ -74,6 +82,7 @@ def save_or_update_lead(lead: dict):
                 lead.get("remarks", ""),
                 lead.get("atmosphere", "Good"),
                 lead.get("social_media", "Inactive"),
+                lead.get("social_media_urls", ""),
                 lead.get("google_rating", ""),
                 lead.get("photo_url", ""),
                 existing["id"]
@@ -85,9 +94,9 @@ def save_or_update_lead(lead: dict):
                 INSERT INTO leads (
                     school_name, website_url, contact_number, area_name, 
                     address, pincode, institution_type, appearance, 
-                    remarks, atmosphere, social_media, google_rating, 
+                    remarks, atmosphere, social_media, social_media_urls, google_rating, 
                     photo_url, status
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'New Lead')
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'New Lead')
             """, (
                 lead["school_name"],
                 lead.get("website_url", ""),
@@ -100,6 +109,7 @@ def save_or_update_lead(lead: dict):
                 lead.get("remarks", ""),
                 lead.get("atmosphere", "Good"),
                 lead.get("social_media", "Inactive"),
+                lead.get("social_media_urls", ""),
                 lead.get("google_rating", ""),
                 lead.get("photo_url", ""),
             ))

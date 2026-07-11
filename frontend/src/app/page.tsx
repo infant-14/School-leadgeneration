@@ -281,6 +281,8 @@ export default function LeadGenWorkspace() {
   const [typeInput, setTypeInput] = useState("");
   const [limitInput, setLimitInput] = useState(30);
   const [isScanDepthOpen, setIsScanDepthOpen] = useState(false);
+  const [isCustomLimit, setIsCustomLimit] = useState(false);
+  const [customLimit, setCustomLimit] = useState<number | "">(10);
 
   // Stepper & Progress State
   const [currentStep, setCurrentStep] = useState(1);
@@ -1387,7 +1389,7 @@ export default function LeadGenWorkspace() {
                     </span>
                   </td>
                   <td
-                    className={`p-3 leading-relaxed break-words ${showActions ? `border-r ${isDarkMode ? "border-zinc-800" : "border-[#E2E8F0]"}` : ""}`}
+                    className={`p-3 leading-relaxed break-words whitespace-pre-line ${showActions ? `border-r ${isDarkMode ? "border-zinc-800" : "border-[#E2E8F0]"}` : ""}`}
                   >
                     {lead.remarks || "N/A"}
                   </td>
@@ -2218,35 +2220,77 @@ export default function LeadGenWorkspace() {
                         <label className="block text-[9px] font-bold uppercase tracking-wider text-zinc-400 mb-1.5">
                           Scan Depth
                         </label>
-                        <div className="relative">
-                          <button
-                            type="button"
-                            onClick={() => setIsScanDepthOpen(!isScanDepthOpen)}
-                            className={`w-full border rounded-xl px-3.5 py-2 text-xs focus:outline-none focus:border-[#00637C] focus:ring-1 focus:ring-[#00637C] font-semibold transition-all flex items-center justify-between gap-1.5 select-none ${
-                              isDarkMode
-                                ? "bg-zinc-850 border-zinc-700 text-white hover:bg-zinc-800"
-                                : "bg-[#F8FAFC] border-zinc-200 text-[#111827] hover:bg-zinc-50"
-                            }`}
-                          >
-                            <span>
-                              {limitInput === 30 && "30 (Page 1)"}
-                              {limitInput === 60 && "60 (Pages 1 & 2)"}
-                              {limitInput === 90 && "90 (Pages 1 - 3)"}
-                              {limitInput === 150 && "150 (Deep Scan)"}
-                            </span>
-                            <svg
-                              className={`h-3 w-3 transition-transform ${isScanDepthOpen ? "rotate-180" : ""}`}
-                              xmlns="http://www.w3.org/2000/svg"
-                              viewBox="0 0 20 20"
-                              fill="currentColor"
-                            >
-                              <path
-                                fillRule="evenodd"
-                                d="M5.23 7.21a.75.75 0 011.06.02L10 11.168l3.71-3.938a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z"
-                                clipRule="evenodd"
+                        <div className="relative w-full">
+                          {isCustomLimit ? (
+                            <div className="relative">
+                              <input
+                                type="number"
+                                min={1}
+                                max={500}
+                                value={customLimit}
+                                onChange={(e) => {
+                                  const val = e.target.value;
+                                  setCustomLimit(val === "" ? "" : Number(val));
+                                  if (val !== "") {
+                                    setLimitInput(Number(val));
+                                  }
+                                }}
+                                placeholder="Limit"
+                                className={`w-full border rounded-xl pl-3.5 pr-8 py-2 text-xs focus:outline-none focus:border-[#00637C] focus:ring-1 focus:ring-[#00637C] font-semibold transition-all ${
+                                  isDarkMode
+                                    ? "bg-zinc-850 border-zinc-700 text-white placeholder-zinc-500"
+                                    : "bg-[#F8FAFC] border-zinc-200 text-[#111827] placeholder-zinc-400"
+                                }`}
                               />
-                            </svg>
-                          </button>
+                              <button
+                                type="button"
+                                onClick={() => setIsScanDepthOpen(!isScanDepthOpen)}
+                                className="absolute right-2.5 top-1/2 -translate-y-1/2 p-0.5 text-zinc-400 hover:text-zinc-650 focus:outline-none select-none"
+                              >
+                                <svg
+                                  className={`h-3.5 w-3.5 transition-transform ${isScanDepthOpen ? "rotate-180" : ""}`}
+                                  xmlns="http://www.w3.org/2000/svg"
+                                  viewBox="0 0 20 20"
+                                  fill="currentColor"
+                                >
+                                  <path
+                                    fillRule="evenodd"
+                                    d="M5.23 7.21a.75.75 0 011.06.02L10 11.168l3.71-3.938a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z"
+                                    clipRule="evenodd"
+                                  />
+                                </svg>
+                              </button>
+                            </div>
+                          ) : (
+                            <button
+                              type="button"
+                              onClick={() => setIsScanDepthOpen(!isScanDepthOpen)}
+                              className={`w-full border rounded-xl px-3.5 py-2 text-xs focus:outline-none focus:border-[#00637C] focus:ring-1 focus:ring-[#00637C] font-semibold transition-all flex items-center justify-between gap-1.5 select-none ${
+                                isDarkMode
+                                  ? "bg-zinc-850 border-zinc-700 text-white hover:bg-zinc-800"
+                                  : "bg-[#F8FAFC] border-zinc-200 text-[#111827] hover:bg-zinc-50"
+                              }`}
+                            >
+                              <span>
+                                {limitInput === 30 && "30 (Page 1)"}
+                                {limitInput === 60 && "60 (Pages 1 & 2)"}
+                                {limitInput === 90 && "90 (Pages 1 - 3)"}
+                                {limitInput === 150 && "150 (Deep Scan)"}
+                              </span>
+                              <svg
+                                className={`h-3 w-3 transition-transform ${isScanDepthOpen ? "rotate-180" : ""}`}
+                                xmlns="http://www.w3.org/2000/svg"
+                                viewBox="0 0 20 20"
+                                fill="currentColor"
+                              >
+                                <path
+                                  fillRule="evenodd"
+                                  d="M5.23 7.21a.75.75 0 011.06.02L10 11.168l3.71-3.938a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z"
+                                  clipRule="evenodd"
+                                />
+                              </svg>
+                            </button>
+                          )}
 
                           {isScanDepthOpen && (
                             <>
@@ -2266,14 +2310,21 @@ export default function LeadGenWorkspace() {
                                   { value: 60, label: "60 (Pages 1 & 2)" },
                                   { value: 90, label: "90 (Pages 1 - 3)" },
                                   { value: 150, label: "150 (Deep Scan)" },
+                                  { value: "custom", label: "Custom Limit..." },
                                 ].map((option) => {
-                                  const isActive = option.value === limitInput;
+                                  const isActive = option.value === "custom" ? isCustomLimit : (!isCustomLimit && option.value === limitInput);
                                   return (
                                     <button
                                       key={option.value}
                                       type="button"
                                       onClick={() => {
-                                        setLimitInput(option.value);
+                                        if (option.value === "custom") {
+                                          setIsCustomLimit(true);
+                                          setLimitInput(Number(customLimit) || 10);
+                                        } else {
+                                          setIsCustomLimit(false);
+                                          setLimitInput(Number(option.value));
+                                        }
                                         setIsScanDepthOpen(false);
                                       }}
                                       className={`w-full text-left px-4 py-2 text-xs font-semibold transition-all ${
@@ -3039,25 +3090,94 @@ export default function LeadGenWorkspace() {
                     </span>
                   </div>
 
-                  {selectedLead.social_media === "Active" ? (
-                    <div className="space-y-2.5">
-                      <div className="bg-white p-3 rounded-lg border border-[#E2E8F0] shadow-sm">
-                        <div className="text-zinc-400 text-[9px] font-semibold">
-                          12 Days Ago • Facebook Page
+                  {(() => {
+                    let urls: Record<string, string> = {};
+                    if (selectedLead.social_media_urls) {
+                      try {
+                        urls = JSON.parse(selectedLead.social_media_urls);
+                      } catch (e) {
+                        console.error(e);
+                      }
+                    }
+                    const platforms = Object.keys(urls).filter(key => urls[key]);
+
+                    if (platforms.length > 0) {
+                      return (
+                        <div className="space-y-3">
+                          <div className={`text-[10px] font-medium leading-snug ${isDarkMode ? "text-zinc-300" : "text-[#111827]"}`}>
+                            {selectedLead.social_media === "Active"
+                              ? "Recent activity and updates detected in the last 30 days."
+                              : "Social media profiles present, but no recent updates found in the last 30 days."}
+                          </div>
+                          <div className="flex flex-wrap gap-2">
+                            {urls.facebook && (
+                              <a
+                                href={urls.facebook}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-[10px] font-bold transition-all shadow-sm ${
+                                  isDarkMode
+                                    ? "bg-zinc-800 border-zinc-700 text-[#1877F2] hover:bg-zinc-750"
+                                    : "bg-white border-[#E2E8F0] text-[#1877F2] hover:bg-zinc-50"
+                                }`}
+                              >
+                                <svg className="h-3.5 w-3.5 fill-current" viewBox="0 0 24 24">
+                                  <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z" />
+                                </svg>
+                                Facebook
+                              </a>
+                            )}
+                            {urls.instagram && (
+                              <a
+                                href={urls.instagram}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-[10px] font-bold transition-all shadow-sm ${
+                                  isDarkMode
+                                    ? "bg-zinc-800 border-zinc-700 text-[#E1306C] hover:bg-zinc-750"
+                                    : "bg-white border-[#E2E8F0] text-[#E1306C] hover:bg-zinc-50"
+                                }`}
+                              >
+                                <svg className="h-3.5 w-3.5 fill-current" viewBox="0 0 24 24">
+                                  <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zM12 0C8.741 0 8.333.014 7.053.072 2.695.272.273 2.69.073 7.051.014 8.333 0 8.741 0 12c0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98C15.668.014 15.259 0 12 0zm0 5.838a6.162 6.162 0 100 12.324 6.162 6.162 0 000-12.324zM12 16a4 4 0 110-8 4 4 0 010 8zm6.406-11.845a1.44 1.44 0 100 2.881 1.44 1.44 0 000-2.881z" />
+                                </svg>
+                                Instagram
+                              </a>
+                            )}
+                            {urls.linkedin && (
+                              <a
+                                href={urls.linkedin}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-[10px] font-bold transition-all shadow-sm ${
+                                  isDarkMode
+                                    ? "bg-zinc-880 border-zinc-700 text-[#0A66C2] hover:bg-zinc-750"
+                                    : "bg-white border-[#E2E8F0] text-[#0A66C2] hover:bg-zinc-50"
+                                }`}
+                              >
+                                <svg className="h-3.5 w-3.5 fill-current" viewBox="0 0 24 24">
+                                  <path d="M19 0h-14c-2.761 0-5 2.239-5 5v14c0 2.761 2.239 5 5 5h14c2.762 0 5-2.239 5-5v-14c0-2.761-2.238-5-5-5zm-11 19h-3v-11h3v11zm-1.5-12.268c-.966 0-1.75-.779-1.75-1.75s.784-1.75 1.75-1.75 1.75.779 1.75 1.75-.784 1.75-1.75 1.75zm13.5 12.268h-3v-5.604c0-3.368-4-3.113-4 0v5.604h-3v-11h3v1.765c1.396-2.586 7-2.777 7 2.476v6.759z" />
+                                </svg>
+                                LinkedIn
+                              </a>
+                            )}
+                          </div>
                         </div>
-                        <p className="text-[#111827] text-[10px] leading-snug mt-1 font-medium">
-                          "Admissions are open for CBSE & Matriculation batches
-                          for 2026-27. Limited seats remaining! Contact desk
-                          at..."
-                        </p>
+                      );
+                    }
+
+                    return (
+                      <div className={`p-4 text-center rounded-lg border text-[10px] font-bold ${
+                        isDarkMode
+                          ? "bg-zinc-900 border-zinc-800 text-zinc-500"
+                          : "bg-white border-[#E2E8F0] text-zinc-400"
+                      }`}>
+                        {selectedLead.social_media === "Active"
+                          ? "Active postings were detected on social handles, but direct profile links are not saved (Run a new scan to discover links)."
+                          : "No social media profiles detected on their website."}
                       </div>
-                    </div>
-                  ) : (
-                    <div className="bg-white p-4 text-center rounded-lg border border-[#E2E8F0] text-zinc-400 text-[10px] font-bold">
-                      No social posts detected in the last 30 days. Outdated
-                      outreach.
-                    </div>
-                  )}
+                    );
+                  })()}
                 </div>
               </div>
 
