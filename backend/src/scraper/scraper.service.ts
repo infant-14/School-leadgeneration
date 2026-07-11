@@ -34,7 +34,10 @@ export class ScraperService {
     try {
       this.scraperGateway.broadcast(`> Launching lead scraper for '${type}' in '${area}'...`);
 
-      const pythonExe = path.join(this.rootDir, 'venv/Scripts/python.exe');
+      let pythonExe = path.join(this.rootDir, 'venv/Scripts/python.exe');
+      if (process.platform !== 'win32') {
+        pythonExe = path.join(this.rootDir, 'venv/bin/python');
+      }
       const mainScript = path.join(this.rootDir, 'backend_python', 'main.py');
 
       // Fetch existing leads and write to JSON file for Python script to skip
@@ -150,6 +153,7 @@ export class ScraperService {
                     remarks: item.remarks || '',
                     atmosphere: item.atmosphere || 'Good',
                     social_media: item.social_media || 'Inactive',
+                    social_media_urls: item.social_media_urls || '',
                     google_rating: item.google_rating || '',
                     photo_url: item.photo_url || '',
                     batch_id: batchId, // Update batch ID to represent the newest scrape session
@@ -171,6 +175,7 @@ export class ScraperService {
                     remarks: item.remarks || '',
                     atmosphere: item.atmosphere || 'Good',
                     social_media: item.social_media || 'Inactive',
+                    social_media_urls: item.social_media_urls || '',
                     google_rating: item.google_rating || '',
                     photo_url: item.photo_url || '',
                     status: 'New Lead',
