@@ -175,7 +175,8 @@ def run_lead_pipeline(area: str, school_type: str, limit: int, output_file: str 
             atmosphere = evaluate_institution_atmosphere(photo_url, rating)
             
             # D. Check Social Media Activity
-            social_status, social_remark = evaluate_social_media_status(website_url, school_name, area)
+            import json
+            social_status, social_remark, social_links_dict = evaluate_social_media_status(website_url, school_name, area)
             if social_remark:
                 remarks = f"{remarks} | {social_remark}" if remarks else social_remark
             
@@ -191,6 +192,7 @@ def run_lead_pipeline(area: str, school_type: str, limit: int, output_file: str 
                 "remarks": remarks,
                 "atmosphere": atmosphere,
                 "social_media": social_status,
+                "social_media_urls": json.dumps(social_links_dict) if social_links_dict else "",
                 "google_rating": rating,
                 "photo_url": photo_url
             }

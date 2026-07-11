@@ -180,7 +180,8 @@ def evaluate_social_media_status(website_url: str, school_name: str, area: str) 
     except Exception as outer_err:
         logger.error(f"Outer error in social scan orchestration: {outer_err}")
         
-    # Check if we have at least one valid custom profile link
+    # Check if we have at least one valid custom profile link and keep cleaned urls
+    cleaned_social_urls = {}
     has_valid_profile = False
     for platform, url in social_urls.items():
         if url:
@@ -192,6 +193,7 @@ def evaluate_social_media_status(website_url: str, school_name: str, area: str) 
                     break
             if not domain_only:
                 has_valid_profile = True
+                cleaned_social_urls[platform] = url
                 
     if has_valid_profile and is_active:
         status_str = "Active"
@@ -203,4 +205,4 @@ def evaluate_social_media_status(website_url: str, school_name: str, area: str) 
         else:
             remark_str = ""
         
-    return status_str, remark_str
+    return status_str, remark_str, cleaned_social_urls

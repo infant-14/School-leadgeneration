@@ -45,6 +45,9 @@ export class Lead {
   social_media: string;
 
   @Column({ nullable: true })
+  social_media_urls: string;
+
+  @Column({ nullable: true })
   google_rating: string;
 
   @Column({ nullable: true })
