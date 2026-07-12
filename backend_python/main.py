@@ -139,7 +139,9 @@ def run_lead_pipeline(area: str, school_type: str, limit: int, output_file: str 
             #     continue
             
             # B. Audit Website Appearance & Remarks
-            appearance, remarks, website_text = evaluate_website_screenshot(website_url)
+            appearance, remarks, website_text, resolved_url = evaluate_website_screenshot(website_url)
+            if resolved_url:
+                website_url = resolved_url
             
             # Refine type based on website text keywords if name-based classification was ambiguous
             if inst_type.lower() not in ["cbse", "matriculation", "international"] or inst_type == "Other":

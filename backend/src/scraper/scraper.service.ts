@@ -150,6 +150,7 @@ export class ScraperService {
                     remarks: item.remarks || '',
                     atmosphere: item.atmosphere || 'Good',
                     social_media: item.social_media || 'Inactive',
+                    social_media_urls: item.social_media_urls || '',
                     google_rating: item.google_rating || '',
                     photo_url: item.photo_url || '',
                     batch_id: batchId, // Update batch ID to represent the newest scrape session
@@ -171,6 +172,7 @@ export class ScraperService {
                     remarks: item.remarks || '',
                     atmosphere: item.atmosphere || 'Good',
                     social_media: item.social_media || 'Inactive',
+                    social_media_urls: item.social_media_urls || '',
                     google_rating: item.google_rating || '',
                     photo_url: item.photo_url || '',
                     status: 'New Lead',

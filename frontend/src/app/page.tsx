@@ -374,9 +374,9 @@ export default function LeadGenWorkspace() {
         setTableScrollWidth(tableContainerRef.current.scrollWidth);
       }
     };
-    
+
     updateWidth();
-    
+
     if (typeof window !== "undefined" && tableContainerRef.current) {
       const observer = new ResizeObserver(updateWidth);
       observer.observe(tableContainerRef.current);
@@ -386,7 +386,9 @@ export default function LeadGenWorkspace() {
 
   const handleTopScroll = () => {
     if (topScrollRef.current && tableContainerRef.current) {
-      if (tableContainerRef.current.scrollLeft !== topScrollRef.current.scrollLeft) {
+      if (
+        tableContainerRef.current.scrollLeft !== topScrollRef.current.scrollLeft
+      ) {
         tableContainerRef.current.scrollLeft = topScrollRef.current.scrollLeft;
       }
     }
@@ -394,16 +396,19 @@ export default function LeadGenWorkspace() {
 
   const handleTableScroll = () => {
     if (topScrollRef.current && tableContainerRef.current) {
-      if (topScrollRef.current.scrollLeft !== tableContainerRef.current.scrollLeft) {
+      if (
+        topScrollRef.current.scrollLeft !== tableContainerRef.current.scrollLeft
+      ) {
         topScrollRef.current.scrollLeft = tableContainerRef.current.scrollLeft;
       }
     }
   };
 
+  // const API_BASE =
+  //   process.env.NEXT_PUBLIC_API_BASE ||
+  //   "https://jlglzg4d-8080.inc1.devtunnels.ms/api";
   const API_BASE =
-    process.env.NEXT_PUBLIC_API_BASE ||
-    "https://jlglzg4d-8080.inc1.devtunnels.ms/api";
-  // const API_BASE = process.env.NEXT_PUBLIC_API_BASE || "http://localhost:8080/api";
+    process.env.NEXT_PUBLIC_API_BASE || "http://localhost:8080/api";
 
   // Fetch leads on mount and whenever tab changes
   useEffect(() => {
@@ -1158,286 +1163,288 @@ export default function LeadGenWorkspace() {
           ref={tableContainerRef}
           onScroll={handleTableScroll}
           className={`overflow-auto border rounded-lg max-h-[calc(100vh-320px)] crm-table-container ${
-            isDarkMode ? "border-zinc-800 bg-zinc-900" : "border-[#E2E8F0] bg-white"
+            isDarkMode
+              ? "border-zinc-800 bg-zinc-900"
+              : "border-[#E2E8F0] bg-white"
           }`}
         >
-          <table
-            className="w-full min-w-max text-left text-xs border-collapse"
-          >
-          <thead>
-            <tr
-              className={`text-[11px] font-bold border-b select-none ${
-                isDarkMode
-                  ? "bg-zinc-850 text-zinc-300 border-zinc-800"
-                  : "bg-zinc-50 text-zinc-500 border-[#E2E8F0]"
-              }`}
-            >
-              <th
-                className={`sticky top-0 z-10 p-3 text-center border-b border-r w-12 ${isDarkMode ? "bg-zinc-850 border-zinc-800 text-zinc-300" : "bg-zinc-50 border-[#E2E8F0] text-zinc-500"}`}
+          <table className="w-full min-w-max text-left text-xs border-collapse">
+            <thead>
+              <tr
+                className={`text-[11px] font-bold border-b select-none ${
+                  isDarkMode
+                    ? "bg-zinc-850 text-zinc-300 border-zinc-800"
+                    : "bg-zinc-50 text-zinc-500 border-[#E2E8F0]"
+                }`}
               >
-                S.No.
-              </th>
-              <th
-                className={`sticky top-0 z-10 p-3 border-b border-r min-w-[150px] ${isDarkMode ? "bg-zinc-850 border-zinc-800 text-zinc-300" : "bg-zinc-50 border-[#E2E8F0] text-zinc-500"}`}
-              >
-                School Name
-              </th>
-              <th
-                className={`sticky top-0 z-10 p-3 border-b border-r min-w-[120px] ${isDarkMode ? "bg-zinc-850 border-zinc-800 text-zinc-300" : "bg-zinc-50 border-[#E2E8F0] text-zinc-500"}`}
-              >
-                Customer Name
-              </th>
-              <th
-                className={`sticky top-0 z-10 p-3 text-center border-b border-r min-w-[120px] ${isDarkMode ? "bg-zinc-850 border-zinc-800 text-zinc-300" : "bg-zinc-50 border-[#E2E8F0] text-zinc-500"}`}
-              >
-                Institution Type
-              </th>
-              <th
-                className={`sticky top-0 z-10 p-3 text-center border-b border-r min-w-[100px] ${isDarkMode ? "bg-zinc-850 border-zinc-800 text-zinc-300" : "bg-zinc-50 border-[#E2E8F0] text-zinc-500"}`}
-              >
-                Social Media
-              </th>
-              <th
-                className={`sticky top-0 z-10 p-3 border-b border-r min-w-[100px] ${isDarkMode ? "bg-zinc-850 border-zinc-800 text-zinc-300" : "bg-zinc-50 border-[#E2E8F0] text-zinc-500"}`}
-              >
-                Area Name
-              </th>
-              <th
-                className={`sticky top-0 z-10 p-3 text-center border-b border-r min-w-[140px] ${isDarkMode ? "bg-zinc-850 border-zinc-800 text-zinc-300" : "bg-zinc-50 border-[#E2E8F0] text-zinc-500"}`}
-              >
-                Institution Atmosphere
-              </th>
-              <th
-                className={`sticky top-0 z-10 p-3 border-b border-r min-w-[150px] ${isDarkMode ? "bg-zinc-850 border-zinc-800 text-zinc-300" : "bg-zinc-50 border-[#E2E8F0] text-zinc-500"}`}
-              >
-                Website URL
-              </th>
-              <th
-                className={`sticky top-0 z-10 p-3 border-b border-r min-w-[110px] ${isDarkMode ? "bg-zinc-850 border-zinc-800 text-zinc-300" : "bg-zinc-50 border-[#E2E8F0] text-zinc-500"}`}
-              >
-                Contact Number
-              </th>
-              <th
-                className={`sticky top-0 z-10 p-3 border-b border-r min-w-[200px] ${isDarkMode ? "bg-zinc-850 border-zinc-800 text-zinc-300" : "bg-zinc-50 border-[#E2E8F0] text-zinc-500"}`}
-              >
-                School Address
-              </th>
-              <th
-                className={`sticky top-0 z-10 p-3 border-b border-r min-w-[100px] ${isDarkMode ? "bg-zinc-850 border-zinc-800 text-zinc-300" : "bg-zinc-50 border-[#E2E8F0] text-zinc-500"}`}
-              >
-                Pincode
-              </th>
-              <th
-                className={`sticky top-0 z-10 p-3 text-center border-b border-r min-w-[100px] ${isDarkMode ? "bg-zinc-850 border-zinc-800 text-zinc-300" : "bg-zinc-50 border-[#E2E8F0] text-zinc-500"}`}
-              >
-                Appearance
-              </th>
-              <th
-                className={`sticky top-0 z-10 p-3 border-b min-w-[200px] ${
-                  showActions ? "border-r" : ""
-                } ${isDarkMode ? "bg-zinc-850 border-zinc-800 text-zinc-300" : "bg-zinc-50 border-[#E2E8F0] text-zinc-500"}`}
-              >
-                Remarks
-              </th>
-              {showActions && (
-                <>
-                  <th
-                    className={`sticky top-0 z-10 p-3 text-center border-b border-r min-w-[125px] ${isDarkMode ? "bg-zinc-850 border-zinc-800 text-zinc-300" : "bg-zinc-50 border-[#E2E8F0] text-zinc-500"}`}
-                  >
-                    Stage
-                  </th>
-                  <th
-                    className={`sticky top-0 z-10 p-3 text-center border-b min-w-[80px] ${isDarkMode ? "bg-zinc-850 border-zinc-800 text-zinc-300" : "bg-zinc-50 border-[#E2E8F0] text-zinc-500"}`}
-                  >
-                    Action
-                  </th>
-                </>
-              )}
-            </tr>
-          </thead>
-          <tbody
-            className={`divide-y ${isDarkMode ? "divide-zinc-800" : "divide-[#E2E8F0]"}`}
-          >
-            {leadsList.length === 0 ? (
-              <tr>
-                <td
-                  colSpan={showActions ? 15 : 13}
-                  className="p-8 text-center text-zinc-400 font-bold"
+                <th
+                  className={`sticky top-0 z-10 p-3 text-center border-b border-r w-12 ${isDarkMode ? "bg-zinc-850 border-zinc-800 text-zinc-300" : "bg-zinc-50 border-[#E2E8F0] text-zinc-500"}`}
                 >
-                  No matching leads found.
-                </td>
+                  S.No.
+                </th>
+                <th
+                  className={`sticky top-0 z-10 p-3 border-b border-r min-w-[150px] ${isDarkMode ? "bg-zinc-850 border-zinc-800 text-zinc-300" : "bg-zinc-50 border-[#E2E8F0] text-zinc-500"}`}
+                >
+                  School Name
+                </th>
+                <th
+                  className={`sticky top-0 z-10 p-3 border-b border-r min-w-[120px] ${isDarkMode ? "bg-zinc-850 border-zinc-800 text-zinc-300" : "bg-zinc-50 border-[#E2E8F0] text-zinc-500"}`}
+                >
+                  Customer Name
+                </th>
+                <th
+                  className={`sticky top-0 z-10 p-3 text-center border-b border-r min-w-[120px] ${isDarkMode ? "bg-zinc-850 border-zinc-800 text-zinc-300" : "bg-zinc-50 border-[#E2E8F0] text-zinc-500"}`}
+                >
+                  Institution Type
+                </th>
+                <th
+                  className={`sticky top-0 z-10 p-3 text-center border-b border-r min-w-[100px] ${isDarkMode ? "bg-zinc-850 border-zinc-800 text-zinc-300" : "bg-zinc-50 border-[#E2E8F0] text-zinc-500"}`}
+                >
+                  Social Media
+                </th>
+                <th
+                  className={`sticky top-0 z-10 p-3 border-b border-r min-w-[100px] ${isDarkMode ? "bg-zinc-850 border-zinc-800 text-zinc-300" : "bg-zinc-50 border-[#E2E8F0] text-zinc-500"}`}
+                >
+                  Area Name
+                </th>
+                <th
+                  className={`sticky top-0 z-10 p-3 text-center border-b border-r min-w-[140px] ${isDarkMode ? "bg-zinc-850 border-zinc-800 text-zinc-300" : "bg-zinc-50 border-[#E2E8F0] text-zinc-500"}`}
+                >
+                  Institution Atmosphere
+                </th>
+                <th
+                  className={`sticky top-0 z-10 p-3 border-b border-r min-w-[150px] ${isDarkMode ? "bg-zinc-850 border-zinc-800 text-zinc-300" : "bg-zinc-50 border-[#E2E8F0] text-zinc-500"}`}
+                >
+                  Website URL
+                </th>
+                <th
+                  className={`sticky top-0 z-10 p-3 border-b border-r min-w-[110px] ${isDarkMode ? "bg-zinc-850 border-zinc-800 text-zinc-300" : "bg-zinc-50 border-[#E2E8F0] text-zinc-500"}`}
+                >
+                  Contact Number
+                </th>
+                <th
+                  className={`sticky top-0 z-10 p-3 border-b border-r min-w-[200px] ${isDarkMode ? "bg-zinc-850 border-zinc-800 text-zinc-300" : "bg-zinc-50 border-[#E2E8F0] text-zinc-500"}`}
+                >
+                  School Address
+                </th>
+                <th
+                  className={`sticky top-0 z-10 p-3 border-b border-r min-w-[100px] ${isDarkMode ? "bg-zinc-850 border-zinc-800 text-zinc-300" : "bg-zinc-50 border-[#E2E8F0] text-zinc-500"}`}
+                >
+                  Pincode
+                </th>
+                <th
+                  className={`sticky top-0 z-10 p-3 text-center border-b border-r min-w-[100px] ${isDarkMode ? "bg-zinc-850 border-zinc-800 text-zinc-300" : "bg-zinc-50 border-[#E2E8F0] text-zinc-500"}`}
+                >
+                  Appearance
+                </th>
+                <th
+                  className={`sticky top-0 z-10 p-3 border-b min-w-[200px] ${
+                    showActions ? "border-r" : ""
+                  } ${isDarkMode ? "bg-zinc-850 border-zinc-800 text-zinc-300" : "bg-zinc-50 border-[#E2E8F0] text-zinc-500"}`}
+                >
+                  Remarks
+                </th>
+                {showActions && (
+                  <>
+                    <th
+                      className={`sticky top-0 z-10 p-3 text-center border-b border-r min-w-[125px] ${isDarkMode ? "bg-zinc-850 border-zinc-800 text-zinc-300" : "bg-zinc-50 border-[#E2E8F0] text-zinc-500"}`}
+                    >
+                      Stage
+                    </th>
+                    <th
+                      className={`sticky top-0 z-10 p-3 text-center border-b min-w-[80px] ${isDarkMode ? "bg-zinc-850 border-zinc-800 text-zinc-300" : "bg-zinc-50 border-[#E2E8F0] text-zinc-500"}`}
+                    >
+                      Action
+                    </th>
+                  </>
+                )}
               </tr>
-            ) : (
-              leadsList.map((lead, idx) => (
-                <tr
-                  key={lead.id}
-                  onClick={() => setSelectedLead(lead)}
-                  className={`transition-all text-[11px] font-semibold cursor-pointer border-b ${
-                    selectedLead?.id === lead.id
-                      ? isDarkMode
-                        ? "bg-[#00637C]/20 text-[#00637C] border-b border-[#00637C]"
-                        : "bg-[#e0f2f6] text-[#00637C] border-b border-[#00637C]"
-                      : isDarkMode
-                        ? "bg-zinc-900 hover:bg-zinc-850 text-zinc-200"
-                        : "bg-white hover:bg-zinc-50/80 text-zinc-855"
-                  }`}
-                >
+            </thead>
+            <tbody
+              className={`divide-y ${isDarkMode ? "divide-zinc-800" : "divide-[#E2E8F0]"}`}
+            >
+              {leadsList.length === 0 ? (
+                <tr>
                   <td
-                    className={`p-3 text-center border-r font-bold text-zinc-400 ${isDarkMode ? "border-zinc-800" : "border-[#E2E8F0]"}`}
+                    colSpan={showActions ? 15 : 13}
+                    className="p-8 text-center text-zinc-400 font-bold"
                   >
-                    {(currentPage - 1) * pageSize + idx + 1}
+                    No matching leads found.
                   </td>
-                  <td
-                    className={`p-3 border-r font-extrabold ${isDarkMode ? "text-white border-zinc-800" : "text-zinc-900 border-[#E2E8F0]"}`}
-                  >
-                    {lead.school_name}
-                  </td>
-                  <td
-                    className={`p-3 border-r text-zinc-400 ${isDarkMode ? "border-zinc-800" : "border-[#E2E8F0]"}`}
-                  >
-                    Not necessary
-                  </td>
-                  <td
-                    className={`p-3 text-center border-r ${isDarkMode ? "border-zinc-800" : "border-[#E2E8F0]"}`}
-                  >
-                    <span
-                      className={`font-extrabold px-2 py-0.5 rounded text-[10px] ${
-                        isDarkMode
-                          ? "bg-zinc-800 text-zinc-300 border border-zinc-700"
-                          : "bg-zinc-100 text-zinc-600 border border-zinc-200/60"
-                      }`}
-                    >
-                      {lead.institution_type || "Matriculation"}
-                    </span>
-                  </td>
-                  <td
-                    className={`p-3 text-center border-r ${isDarkMode ? "border-zinc-800" : "border-[#E2E8F0]"}`}
-                  >
-                    <span
-                      className={`inline-block font-extrabold px-2.5 py-0.5 rounded text-[10px] ${
-                        lead.social_media === "Active"
-                          ? "bg-emerald-50 text-emerald-700 border border-emerald-200/50"
-                          : "bg-rose-50 text-rose-700 border border-rose-200/50"
-                      }`}
-                    >
-                      {lead.social_media || "Inactive"}
-                    </span>
-                  </td>
-                  <td
-                    className={`p-3 border-r ${isDarkMode ? "border-zinc-800" : "border-[#E2E8F0]"}`}
-                  >
-                    {lead.area_name}
-                  </td>
-                  <td
-                    className={`p-3 text-center border-r ${isDarkMode ? "border-zinc-800" : "border-[#E2E8F0]"}`}
-                  >
-                    <span
-                      className={`inline-block font-extrabold px-2.5 py-0.5 rounded text-[10px] ${
-                        lead.atmosphere === "Good"
-                          ? "bg-emerald-50 text-emerald-700 border border-emerald-200/50"
-                          : "bg-rose-50 text-rose-700 border border-rose-200/50"
-                      }`}
-                    >
-                      {lead.atmosphere || "Good"}
-                    </span>
-                  </td>
-                  <td
-                    className={`p-3 border-r ${isDarkMode ? "border-zinc-800" : "border-[#E2E8F0]"}`}
-                  >
-                    {lead.website_url ? (
-                      <a
-                        href={lead.website_url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        onClick={(e) => e.stopPropagation()}
-                        className="text-[#00637C] underline hover:text-[#004d60] font-bold break-all"
-                      >
-                        {lead.website_url}
-                      </a>
-                    ) : (
-                      <span className="text-red-500 font-bold">None</span>
-                    )}
-                  </td>
-                  <td
-                    className={`p-3 border-r font-mono font-bold ${isDarkMode ? "border-zinc-800" : "border-[#E2E8F0]"}`}
-                  >
-                    {lead.contact_number || "N/A"}
-                  </td>
-                  <td
-                    className={`p-3 border-r text-zinc-500 font-semibold break-words max-w-[250px] ${isDarkMode ? "border-zinc-800" : "border-[#E2E8F0]"}`}
-                  >
-                    {lead.address || "N/A"}
-                  </td>
-                  <td
-                    className={`p-3 border-r font-mono text-zinc-500 font-bold ${isDarkMode ? "border-zinc-800" : "border-[#E2E8F0]"}`}
-                  >
-                    {lead.pincode || "N/A"}
-                  </td>
-                  <td
-                    className={`p-3 text-center border-r ${isDarkMode ? "border-zinc-800" : "border-[#E2E8F0]"}`}
-                  >
-                    <span
-                      className={`inline-block font-extrabold px-2.5 py-0.5 rounded text-[10px] ${
-                        lead.appearance === "Redesign"
-                          ? "bg-amber-50 text-amber-700 border border-amber-200/50"
-                          : lead.appearance === "Fresh"
-                            ? "bg-blue-50 text-blue-700 border border-blue-200/50"
-                            : "bg-emerald-50 text-emerald-700 border border-emerald-200/50"
-                      }`}
-                    >
-                      {lead.appearance || "Redesign"}
-                    </span>
-                  </td>
-                  <td
-                    className={`p-3 leading-relaxed break-words whitespace-pre-line ${showActions ? `border-r ${isDarkMode ? "border-zinc-800" : "border-[#E2E8F0]"}` : ""}`}
-                  >
-                    {lead.remarks || "N/A"}
-                  </td>
-                  {showActions && (
-                    <>
-                      <td
-                        className={`p-3 text-center border-r ${isDarkMode ? "border-zinc-800" : "border-[#E2E8F0]"}`}
-                      >
-                        <select
-                          value={lead.status}
-                          onClick={(e) => e.stopPropagation()}
-                          onChange={(e) => {
-                            e.stopPropagation();
-                            handleUpdateStatus(lead.id, e.target.value);
-                          }}
-                          className={`border rounded px-2 py-1 font-bold text-[9px] uppercase focus:outline-none ${
-                            isDarkMode
-                              ? "bg-zinc-850 border-zinc-700 text-zinc-300"
-                              : "bg-white border-[#E2E8F0] text-zinc-500"
-                          }`}
-                        >
-                          <option value="New Lead">New Lead</option>
-                          <option value="Qualified">Qualified</option>
-                          <option value="Email Sent">Email Sent</option>
-                          <option value="Replied">Replied</option>
-                          <option value="Meeting Booked">Meeting Booked</option>
-                        </select>
-                      </td>
-                      <td className="p-3 text-center">
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleDeleteLead(lead.id);
-                          }}
-                          className="p-1.5 rounded-lg border border-red-500/10 hover:bg-red-50 text-red-500 transition-all"
-                          title="Delete Lead"
-                        >
-                          <Trash2 className="h-3.5 w-3.5" />
-                        </button>
-                      </td>
-                    </>
-                  )}
                 </tr>
-              ))
-            )}
-          </tbody>
-        </table>
-      </div>
+              ) : (
+                leadsList.map((lead, idx) => (
+                  <tr
+                    key={lead.id}
+                    onClick={() => setSelectedLead(lead)}
+                    className={`transition-all text-[11px] font-semibold cursor-pointer border-b ${
+                      selectedLead?.id === lead.id
+                        ? isDarkMode
+                          ? "bg-[#00637C]/20 text-[#00637C] border-b border-[#00637C]"
+                          : "bg-[#e0f2f6] text-[#00637C] border-b border-[#00637C]"
+                        : isDarkMode
+                          ? "bg-zinc-900 hover:bg-zinc-850 text-zinc-200"
+                          : "bg-white hover:bg-zinc-50/80 text-zinc-855"
+                    }`}
+                  >
+                    <td
+                      className={`p-3 text-center border-r font-bold text-zinc-400 ${isDarkMode ? "border-zinc-800" : "border-[#E2E8F0]"}`}
+                    >
+                      {(currentPage - 1) * pageSize + idx + 1}
+                    </td>
+                    <td
+                      className={`p-3 border-r font-extrabold ${isDarkMode ? "text-white border-zinc-800" : "text-zinc-900 border-[#E2E8F0]"}`}
+                    >
+                      {lead.school_name}
+                    </td>
+                    <td
+                      className={`p-3 border-r text-zinc-400 ${isDarkMode ? "border-zinc-800" : "border-[#E2E8F0]"}`}
+                    >
+                      Not necessary
+                    </td>
+                    <td
+                      className={`p-3 text-center border-r ${isDarkMode ? "border-zinc-800" : "border-[#E2E8F0]"}`}
+                    >
+                      <span
+                        className={`font-extrabold px-2 py-0.5 rounded text-[10px] ${
+                          isDarkMode
+                            ? "bg-zinc-800 text-zinc-300 border border-zinc-700"
+                            : "bg-zinc-100 text-zinc-600 border border-zinc-200/60"
+                        }`}
+                      >
+                        {lead.institution_type || "Matriculation"}
+                      </span>
+                    </td>
+                    <td
+                      className={`p-3 text-center border-r ${isDarkMode ? "border-zinc-800" : "border-[#E2E8F0]"}`}
+                    >
+                      <span
+                        className={`inline-block font-extrabold px-2.5 py-0.5 rounded text-[10px] ${
+                          lead.social_media === "Active"
+                            ? "bg-emerald-50 text-emerald-700 border border-emerald-200/50"
+                            : "bg-rose-50 text-rose-700 border border-rose-200/50"
+                        }`}
+                      >
+                        {lead.social_media || "Inactive"}
+                      </span>
+                    </td>
+                    <td
+                      className={`p-3 border-r ${isDarkMode ? "border-zinc-800" : "border-[#E2E8F0]"}`}
+                    >
+                      {lead.area_name}
+                    </td>
+                    <td
+                      className={`p-3 text-center border-r ${isDarkMode ? "border-zinc-800" : "border-[#E2E8F0]"}`}
+                    >
+                      <span
+                        className={`inline-block font-extrabold px-2.5 py-0.5 rounded text-[10px] ${
+                          lead.atmosphere === "Good"
+                            ? "bg-emerald-50 text-emerald-700 border border-emerald-200/50"
+                            : "bg-rose-50 text-rose-700 border border-rose-200/50"
+                        }`}
+                      >
+                        {lead.atmosphere || "Good"}
+                      </span>
+                    </td>
+                    <td
+                      className={`p-3 border-r ${isDarkMode ? "border-zinc-800" : "border-[#E2E8F0]"}`}
+                    >
+                      {lead.website_url ? (
+                        <a
+                          href={lead.website_url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          onClick={(e) => e.stopPropagation()}
+                          className="text-[#00637C] underline hover:text-[#004d60] font-bold break-all"
+                        >
+                          {lead.website_url}
+                        </a>
+                      ) : (
+                        <span className="text-red-500 font-bold">None</span>
+                      )}
+                    </td>
+                    <td
+                      className={`p-3 border-r font-mono font-bold ${isDarkMode ? "border-zinc-800" : "border-[#E2E8F0]"}`}
+                    >
+                      {lead.contact_number || "N/A"}
+                    </td>
+                    <td
+                      className={`p-3 border-r text-zinc-500 font-semibold break-words max-w-[250px] ${isDarkMode ? "border-zinc-800" : "border-[#E2E8F0]"}`}
+                    >
+                      {lead.address || "N/A"}
+                    </td>
+                    <td
+                      className={`p-3 border-r font-mono text-zinc-500 font-bold ${isDarkMode ? "border-zinc-800" : "border-[#E2E8F0]"}`}
+                    >
+                      {lead.pincode || "N/A"}
+                    </td>
+                    <td
+                      className={`p-3 text-center border-r ${isDarkMode ? "border-zinc-800" : "border-[#E2E8F0]"}`}
+                    >
+                      <span
+                        className={`inline-block font-extrabold px-2.5 py-0.5 rounded text-[10px] ${
+                          lead.appearance === "Redesign"
+                            ? "bg-amber-50 text-amber-700 border border-amber-200/50"
+                            : lead.appearance === "Fresh"
+                              ? "bg-blue-50 text-blue-700 border border-blue-200/50"
+                              : "bg-emerald-50 text-emerald-700 border border-emerald-200/50"
+                        }`}
+                      >
+                        {lead.appearance || "Redesign"}
+                      </span>
+                    </td>
+                    <td
+                      className={`p-3 leading-relaxed break-words whitespace-pre-line ${showActions ? `border-r ${isDarkMode ? "border-zinc-800" : "border-[#E2E8F0]"}` : ""}`}
+                    >
+                      {lead.remarks || "N/A"}
+                    </td>
+                    {showActions && (
+                      <>
+                        <td
+                          className={`p-3 text-center border-r ${isDarkMode ? "border-zinc-800" : "border-[#E2E8F0]"}`}
+                        >
+                          <select
+                            value={lead.status}
+                            onClick={(e) => e.stopPropagation()}
+                            onChange={(e) => {
+                              e.stopPropagation();
+                              handleUpdateStatus(lead.id, e.target.value);
+                            }}
+                            className={`border rounded px-2 py-1 font-bold text-[9px] uppercase focus:outline-none ${
+                              isDarkMode
+                                ? "bg-zinc-850 border-zinc-700 text-zinc-300"
+                                : "bg-white border-[#E2E8F0] text-zinc-500"
+                            }`}
+                          >
+                            <option value="New Lead">New Lead</option>
+                            <option value="Qualified">Qualified</option>
+                            <option value="Email Sent">Email Sent</option>
+                            <option value="Replied">Replied</option>
+                            <option value="Meeting Booked">
+                              Meeting Booked
+                            </option>
+                          </select>
+                        </td>
+                        <td className="p-3 text-center">
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleDeleteLead(lead.id);
+                            }}
+                            className="p-1.5 rounded-lg border border-red-500/10 hover:bg-red-50 text-red-500 transition-all"
+                            title="Delete Lead"
+                          >
+                            <Trash2 className="h-3.5 w-3.5" />
+                          </button>
+                        </td>
+                      </>
+                    )}
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
       </div>
     );
   };
@@ -2244,7 +2251,9 @@ export default function LeadGenWorkspace() {
                               />
                               <button
                                 type="button"
-                                onClick={() => setIsScanDepthOpen(!isScanDepthOpen)}
+                                onClick={() =>
+                                  setIsScanDepthOpen(!isScanDepthOpen)
+                                }
                                 className="absolute right-2.5 top-1/2 -translate-y-1/2 p-0.5 text-zinc-400 hover:text-zinc-650 focus:outline-none select-none"
                               >
                                 <svg
@@ -2264,7 +2273,9 @@ export default function LeadGenWorkspace() {
                           ) : (
                             <button
                               type="button"
-                              onClick={() => setIsScanDepthOpen(!isScanDepthOpen)}
+                              onClick={() =>
+                                setIsScanDepthOpen(!isScanDepthOpen)
+                              }
                               className={`w-full border rounded-xl px-3.5 py-2 text-xs focus:outline-none focus:border-[#00637C] focus:ring-1 focus:ring-[#00637C] font-semibold transition-all flex items-center justify-between gap-1.5 select-none ${
                                 isDarkMode
                                   ? "bg-zinc-850 border-zinc-700 text-white hover:bg-zinc-800"
@@ -2312,7 +2323,11 @@ export default function LeadGenWorkspace() {
                                   { value: 150, label: "150 (Deep Scan)" },
                                   { value: "custom", label: "Custom Limit..." },
                                 ].map((option) => {
-                                  const isActive = option.value === "custom" ? isCustomLimit : (!isCustomLimit && option.value === limitInput);
+                                  const isActive =
+                                    option.value === "custom"
+                                      ? isCustomLimit
+                                      : !isCustomLimit &&
+                                        option.value === limitInput;
                                   return (
                                     <button
                                       key={option.value}
@@ -2320,7 +2335,9 @@ export default function LeadGenWorkspace() {
                                       onClick={() => {
                                         if (option.value === "custom") {
                                           setIsCustomLimit(true);
-                                          setLimitInput(Number(customLimit) || 10);
+                                          setLimitInput(
+                                            Number(customLimit) || 10,
+                                          );
                                         } else {
                                           setIsCustomLimit(false);
                                           setLimitInput(Number(option.value));
@@ -3099,12 +3116,16 @@ export default function LeadGenWorkspace() {
                         console.error(e);
                       }
                     }
-                    const platforms = Object.keys(urls).filter(key => urls[key]);
+                    const platforms = Object.keys(urls).filter(
+                      (key) => urls[key],
+                    );
 
                     if (platforms.length > 0) {
                       return (
                         <div className="space-y-3">
-                          <div className={`text-[10px] font-medium leading-snug ${isDarkMode ? "text-zinc-300" : "text-[#111827]"}`}>
+                          <div
+                            className={`text-[10px] font-medium leading-snug ${isDarkMode ? "text-zinc-300" : "text-[#111827]"}`}
+                          >
                             {selectedLead.social_media === "Active"
                               ? "Recent activity and updates detected in the last 30 days."
                               : "Social media profiles present, but no recent updates found in the last 30 days."}
@@ -3121,7 +3142,10 @@ export default function LeadGenWorkspace() {
                                     : "bg-white border-[#E2E8F0] text-[#1877F2] hover:bg-zinc-50"
                                 }`}
                               >
-                                <svg className="h-3.5 w-3.5 fill-current" viewBox="0 0 24 24">
+                                <svg
+                                  className="h-3.5 w-3.5 fill-current"
+                                  viewBox="0 0 24 24"
+                                >
                                   <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z" />
                                 </svg>
                                 Facebook
@@ -3138,7 +3162,10 @@ export default function LeadGenWorkspace() {
                                     : "bg-white border-[#E2E8F0] text-[#E1306C] hover:bg-zinc-50"
                                 }`}
                               >
-                                <svg className="h-3.5 w-3.5 fill-current" viewBox="0 0 24 24">
+                                <svg
+                                  className="h-3.5 w-3.5 fill-current"
+                                  viewBox="0 0 24 24"
+                                >
                                   <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zM12 0C8.741 0 8.333.014 7.053.072 2.695.272.273 2.69.073 7.051.014 8.333 0 8.741 0 12c0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98C15.668.014 15.259 0 12 0zm0 5.838a6.162 6.162 0 100 12.324 6.162 6.162 0 000-12.324zM12 16a4 4 0 110-8 4 4 0 010 8zm6.406-11.845a1.44 1.44 0 100 2.881 1.44 1.44 0 000-2.881z" />
                                 </svg>
                                 Instagram
@@ -3155,7 +3182,10 @@ export default function LeadGenWorkspace() {
                                     : "bg-white border-[#E2E8F0] text-[#0A66C2] hover:bg-zinc-50"
                                 }`}
                               >
-                                <svg className="h-3.5 w-3.5 fill-current" viewBox="0 0 24 24">
+                                <svg
+                                  className="h-3.5 w-3.5 fill-current"
+                                  viewBox="0 0 24 24"
+                                >
                                   <path d="M19 0h-14c-2.761 0-5 2.239-5 5v14c0 2.761 2.239 5 5 5h14c2.762 0 5-2.239 5-5v-14c0-2.761-2.238-5-5-5zm-11 19h-3v-11h3v11zm-1.5-12.268c-.966 0-1.75-.779-1.75-1.75s.784-1.75 1.75-1.75 1.75.779 1.75 1.75-.784 1.75-1.75 1.75zm13.5 12.268h-3v-5.604c0-3.368-4-3.113-4 0v5.604h-3v-11h3v1.765c1.396-2.586 7-2.777 7 2.476v6.759z" />
                                 </svg>
                                 LinkedIn
@@ -3167,11 +3197,13 @@ export default function LeadGenWorkspace() {
                     }
 
                     return (
-                      <div className={`p-4 text-center rounded-lg border text-[10px] font-bold ${
-                        isDarkMode
-                          ? "bg-zinc-900 border-zinc-800 text-zinc-500"
-                          : "bg-white border-[#E2E8F0] text-zinc-400"
-                      }`}>
+                      <div
+                        className={`p-4 text-center rounded-lg border text-[10px] font-bold ${
+                          isDarkMode
+                            ? "bg-zinc-900 border-zinc-800 text-zinc-500"
+                            : "bg-white border-[#E2E8F0] text-zinc-400"
+                        }`}
+                      >
                         {selectedLead.social_media === "Active"
                           ? "Active postings were detected on social handles, but direct profile links are not saved (Run a new scan to discover links)."
                           : "No social media profiles detected on their website."}

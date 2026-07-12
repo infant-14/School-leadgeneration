@@ -35,7 +35,7 @@ export class Lead {
   @Column({ nullable: true })
   appearance: string;
 
-  @Column({ nullable: true })
+  @Column({ type: 'text', nullable: true })
   remarks: string;
 
   @Column({ nullable: true })
@@ -44,7 +44,7 @@ export class Lead {
   @Column({ nullable: true })
   social_media: string;
 
-  @Column({ nullable: true })
+  @Column({ type: 'text', nullable: true })
   social_media_urls: string;
 
   @Column({ nullable: true })
