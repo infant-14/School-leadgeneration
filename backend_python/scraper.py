@@ -185,35 +185,8 @@ def parse_place_details(page, area: str) -> dict:
                 parsed_wrapper = urllib.parse.parse_qs(urllib.parse.urlparse(website_url).query)
                 website_url = parsed_wrapper.get("q", [website_url])[0]
                 
-        # Yahoo Search fallback if website is missing on Google Maps
-        if not website_url:
-            logger.info(f"Website link missing on Google Maps for '{school_name}'. Querying Yahoo Search fallback...")
-            try:
-                search_page = page.context.new_page()
-                search_query = f"{school_name} {area} official website"
-                search_url = f"https://search.yahoo.com/search?p={urllib.parse.quote_plus(search_query)}"
-                search_page.goto(search_url, timeout=12000)
-                search_page.wait_for_timeout(2000)
-                
-                ignored_domains = [
-                    "yahoo.com", "google.com", "facebook.com", "instagram.com", "twitter.com", "linkedin.com",
-                    "youtube.com", "wikipedia.org", "justdial.com", "sulekha.com", "indiamart.com",
-                    "schoolmykids.com", "shiksha.com", "educationworld.in", "careerindia.com",
-                    "indiahall.in", "dialastreet.com", "yelp.com", "tripadvisor.com", "localnears.com"
-                ]
-                
-                links = search_page.query_selector_all('a[href]')
-                for link in links:
-                    href = link.get_attribute("href")
-                    if href and href.startswith("http"):
-                        parsed_domain = urllib.parse.urlparse(href).netloc.lower()
-                        if not any(ignored in parsed_domain for ignored in ignored_domains):
-                            website_url = href
-                            logger.info(f"Found fallback website: {website_url}")
-                            break
-                search_page.close()
-            except Exception as se:
-                logger.warning(f"Error in search website fallback: {se}")
+        # Disabled Yahoo Search fallback to avoid matching incorrect branches of common school names.
+        # Website URL will remain empty/N/A if not listed on Google Maps.
                 
         logger.info(f"Website URL: {website_url}")
         

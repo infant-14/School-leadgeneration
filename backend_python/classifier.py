@@ -266,6 +266,25 @@ def extract_area_from_address(address: str, default_area: str) -> str:
         if re.search(r'\b' + re.escape(suburb) + r'\b', address.lower()):
             return suburb.capitalize()
 
+    # Pincode-to-Area lookup mapping (User's request to map by pincode)
+    pincode = extract_pincode_from_address(address)
+    pincode_map = {
+        "600100": "Medavakkam",
+        "600073": "Santhosapuram",
+        "600045": "Tambaram",
+        "600059": "Chitlapakkam",
+        "600119": "Sholinganallur",
+        "600020": "Adyar",
+        "600096": "Perungudi",
+        "600041": "Thiruvanmiyur",
+        "600097": "Karapakkam",
+        "620006": "Srirangam",
+        "620005": "Thiruvanaikoil",
+        "620002": "Devathanam",
+    }
+    if pincode in pincode_map:
+        return pincode_map[pincode]
+
     # Remove pincode from the address string when finding parts
     addr_clean = re.sub(r'\b\d{6}\b', '', address).strip()
     addr_clean = re.sub(r'-\s*$', '', addr_clean).strip() # remove trailing dash if any
@@ -285,16 +304,40 @@ def extract_area_from_address(address: str, default_area: str) -> str:
             
     if city_idx > 0:
         area = parts[city_idx - 1]
-        if area.isdigit() or len(area) <= 3 or any(x in area.lower() for x in ["road", "street", "no:", "no."]):
-            if city_idx > 1:
-                area = parts[city_idx - 2]
+        # Keep moving back if the candidate is a street, road, door/plot number, or digit
+        curr_idx = city_idx - 1
+        while curr_idx >= 0:
+            candidate = parts[curr_idx]
+            is_invalid = (
+                candidate.isdigit() or 
+                len(candidate) <= 3 or 
+                any(x in candidate.lower() for x in ["road", "street", "no:", "no.", "plot", "door", "layout"])
+            )
+            if not is_invalid:
+                area = candidate
+                break
+            curr_idx -= 1
+        else:
+            # If all preceding parts are invalid, try finding the first non-numeric part in the address
+            for part in parts:
+                if not part.isdigit() and len(part) > 3 and not any(x in part.lower() for x in ["road", "street", "no:", "no.", "plot", "door"]):
+                    area = part
+                    break
+            else:
+                area = default_area
+                
         area = re.sub(r'\b(tamil\s*nadu|tn)\b', '', area, flags=re.IGNORECASE).strip()
         return area.capitalize()
         
     if len(parts) >= 3:
-        return parts[-3].strip().capitalize()
-    elif len(parts) >= 2:
-        return parts[-2].strip().capitalize()
+        area_candidate = parts[-3].strip()
+        if not area_candidate.isdigit() and len(area_candidate) > 3:
+            return area_candidate.capitalize()
+            
+    if len(parts) >= 2:
+        area_candidate = parts[-2].strip()
+        if not area_candidate.isdigit() and len(area_candidate) > 3:
+            return area_candidate.capitalize()
         
     return default_area.capitalize()
 
@@ -483,17 +526,19 @@ def extract_address_fallback_rules(text: str, search_area: str) -> dict:
         # Extract area name
         area = extract_area_from_address(best_candidate, search_area)
         
-        # Phone heuristic: search for 8-11 digit numbers
+        # Phone heuristic: search for 10-12 digit numbers (potentially split by spaces/dashes)
         phone = ""
         found_phones = []
-        for match in re.finditer(r'\b(0\d{2,4}[-\s]?\d{6,8}|[6-9]\d{9}|\+91[-\s]?\d{10})\b', normalized_text):
+        for match in re.finditer(r'\+?[\d\s-]{9,18}', normalized_text):
             num = match.group(0).strip()
             digits = "".join(filter(str.isdigit, num))
-            unique_suffix = digits[-10:] if len(digits) >= 10 else digits
-            if unique_suffix and not any("".join(filter(str.isdigit, f))[-10:] == unique_suffix for f in found_phones):
-                found_phones.append(num)
+            if len(digits) in [10, 11, 12]:
+                cleaned_num = re.sub(r'\s+', ' ', num).strip()
+                unique_suffix = digits[-10:]
+                if not any("".join(filter(str.isdigit, f))[-10:] == unique_suffix for f in found_phones):
+                    found_phones.append(cleaned_num)
         if found_phones:
-            phone = " / ".join(found_phones[:3])
+            phone = " / ".join(found_phones)
             
         return {
             "address": best_candidate,
@@ -575,15 +620,33 @@ def extract_info_from_website_text(text: str, gmaps_address: str, gmaps_phone: s
     # 4. Try Rule-based heuristic fallback if AI failed but text exists
     if cleaned_text:
         try:
+            # Extract phone independently first so we don't lose it if address extraction fails
+            extracted_phone = ""
+            found_phones = []
+            for match in re.finditer(r'\+?[\d\s-]{9,18}', cleaned_text):
+                num = match.group(0).strip()
+                digits = "".join(filter(str.isdigit, num))
+                if len(digits) in [10, 11, 12]:
+                    cleaned_num = re.sub(r'\s+', ' ', num).strip()
+                    unique_suffix = digits[-10:]
+                    if not any("".join(filter(str.isdigit, f))[-10:] == unique_suffix for f in found_phones):
+                        found_phones.append(cleaned_num)
+            if found_phones:
+                extracted_phone = " / ".join(found_phones)
+
             heuristic_data = extract_address_fallback_rules(cleaned_text, search_area)
             if heuristic_data and heuristic_data.get("address"):
                 logger.info("AI failed or was unauthorized. Successfully fell back to rule-based address extraction.")
                 return {
-                    "contact_number": heuristic_data.get("contact_number") or fallback_data["contact_number"],
+                    "contact_number": extracted_phone or heuristic_data.get("contact_number") or fallback_data["contact_number"],
                     "address": heuristic_data["address"],
                     "pincode": heuristic_data.get("pincode") or fallback_data["pincode"],
                     "area_name": heuristic_data.get("area_name") or fallback_data["area_name"]
                 }
+            else:
+                if extracted_phone:
+                    fallback_data["contact_number"] = extracted_phone
+                return fallback_data
         except Exception as he_err:
             logger.error(f"Heuristic fallback address extraction failed: {he_err}")
 
@@ -593,15 +656,16 @@ def extract_info_from_website_text(text: str, gmaps_address: str, gmaps_phone: s
 def evaluate_website_screenshot(website_url: str) -> tuple:
     """
     Captures a website screenshot, gets website text, and evaluates its appearance.
-    Returns a tuple of (appearance, remarks, website_text).
+    Returns a tuple of (appearance, remarks, website_text, resolved_url).
     """
     # 1. Handle missing website
     if not website_url:
-        return "Fresh", "No website found. Needs a fresh design built.", ""
+        return "Fresh", "No website found. Needs a fresh design built.", "", ""
 
     screenshot_bytes = None
     website_text = ""
     audit_stats = None
+    resolved_url = website_url
     
     # 2. Try to capture website screenshot and text content using Playwright
     try:
@@ -617,6 +681,7 @@ def evaluate_website_screenshot(website_url: str) -> tuple:
             
             # Slightly longer timeout with domcontentloaded to avoid load event timeouts on slow school sites
             page.goto(website_url, timeout=20000, wait_until="domcontentloaded")
+            resolved_url = page.url
             page.wait_for_timeout(2000)  # Wait for animations to settle
             screenshot_bytes = page.screenshot(full_page=False)
             
@@ -671,7 +736,7 @@ def evaluate_website_screenshot(website_url: str) -> tuple:
     except Exception as e:
         logger.warning(f"Failed to capture screenshot for {website_url}: {e}")
         # If site is unreachable, it's a good candidate for redesign!
-        return "Redesign", f"Website failed to load: {str(e)[:50]}. Suggest redesigning and hosting a reliable site.", ""
+        return "Redesign", f"Website failed to load: {str(e)[:50]}. Suggest redesigning and hosting a reliable site.", "", website_url
 
     # 3. Handle none provider (generate detailed feedback based on technical audit)
     if ai_provider == "none":
@@ -696,7 +761,7 @@ def evaluate_website_screenshot(website_url: str) -> tuple:
             feedbacks.append("Website domain is parked, inactive, or expired")
             appearance_res = "Redesign"
         else:
-            if website_url.startswith("http://"):
+            if resolved_url.startswith("http://"):
                 feedbacks.append("Insecure connection (HTTP)")
                 appearance_res = "Redesign"
                 
@@ -724,7 +789,7 @@ def evaluate_website_screenshot(website_url: str) -> tuple:
         else:
             remarks_res = "\n".join([f"• {f}" for f in feedbacks])
             
-        return appearance_res, remarks_res, website_text
+        return appearance_res, remarks_res, website_text, resolved_url
 
     prompt = (
         "You are an expert website designer reviewing school websites to identify specific design and layout issues for redesign services. "
@@ -761,7 +826,7 @@ def evaluate_website_screenshot(website_url: str) -> tuple:
             appearance = data.get("appearance", "Redesign")
             remarks = data.get("remarks", "Need to improve the design")
             logger.info(f"Gemini Web Audit: {appearance} - {remarks}")
-            return appearance, remarks, website_text
+            return appearance, remarks, website_text, resolved_url
         except Exception as e:
             logger.error(f"Gemini API failure during web audit, trying Groq fallback: {e}")
 
@@ -775,7 +840,7 @@ def evaluate_website_screenshot(website_url: str) -> tuple:
                 appearance = data.get("appearance", "Redesign")
                 remarks = data.get("remarks", "Need to improve the design")
                 logger.info(f"Groq Web Audit: {appearance} - {remarks}")
-                return appearance, remarks, website_text
+                return appearance, remarks, website_text, resolved_url
         except Exception as e:
             logger.error(f"Groq Vision failure during web audit: {e}")
 
@@ -790,7 +855,7 @@ def evaluate_website_screenshot(website_url: str) -> tuple:
                 appearance = data.get("appearance", "Redesign")
                 remarks = data.get("remarks", "Need to improve the design")
                 logger.info(f"Ollama Web Audit ({vision_model}): {appearance} - {remarks}")
-                return appearance, remarks, website_text
+                return appearance, remarks, website_text, resolved_url
         except Exception as e:
             logger.error(f"Ollama failure during web audit: {e}")
 
@@ -816,7 +881,7 @@ def evaluate_website_screenshot(website_url: str) -> tuple:
         feedbacks.append("Website domain is parked, inactive, or expired")
         appearance_res = "Redesign"
     else:
-        if website_url.startswith("http://"):
+        if resolved_url.startswith("http://"):
             feedbacks.append("Insecure connection (HTTP)")
             appearance_res = "Redesign"
             
@@ -844,7 +909,7 @@ def evaluate_website_screenshot(website_url: str) -> tuple:
     else:
         remarks_res = "\n".join([f"• {f}" for f in feedbacks])
 
-    return appearance_res, remarks_res, website_text
+    return appearance_res, remarks_res, website_text, resolved_url
 
 def _fallback_atmosphere_rating(rating: str) -> str:
     if rating:
