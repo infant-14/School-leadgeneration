@@ -18,7 +18,21 @@ import * as path from 'path';
     }),
     TypeOrmModule.forRootAsync({
       useFactory: () => {
+        console.log('DATABASE_URL =>', process.env.DATABASE_URL);
+        console.log('DB_TYPE =', process.env.DB_TYPE);
         const dbType = process.env.DB_TYPE || 'mysql';
+        if (dbType === 'postgres') {
+          return {
+            type: 'postgres',
+            url: process.env.DATABASE_URL,
+            ssl: {
+              rejectUnauthorized: false,
+            },
+            entities: [Lead, User],
+            synchronize: true,
+            logging: false,
+          };
+        }
         if (dbType === 'sqlite' || dbType === 'better-sqlite3') {
           return {
             type: 'better-sqlite3',
@@ -28,13 +42,16 @@ import * as path from 'path';
             logging: false,
           };
         }
-        
+        console.log('Returning MySQL configuration');
         return {
           type: 'mysql',
           host: process.env.DB_HOST || 'localhost',
           port: Number(process.env.DB_PORT) || 3306,
           username: process.env.DB_USERNAME || 'root',
-          password: process.env.DB_PASSWORD !== undefined ? process.env.DB_PASSWORD : '',
+          password:
+            process.env.DB_PASSWORD !== undefined
+              ? process.env.DB_PASSWORD
+              : '',
           database: process.env.DB_DATABASE || 'school_leads',
           entities: [Lead, User],
           synchronize: true,

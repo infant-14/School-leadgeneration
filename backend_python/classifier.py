@@ -40,9 +40,70 @@ if ai_provider == "ollama":
     logger.info(f"Ollama AI Provider initialized with base URL: {ollama_base_url}")
 
 
+def clean_contact_number(contact_str: str) -> str:
+    if not contact_str or contact_str.lower() in ["n/a", "none", "null", "not found"]:
+        return "N/A"
+        
+    # Split multiple phone numbers if present
+    parts = re.split(r'[/,;]', contact_str)
+    cleaned_parts = []
+    
+    for part in parts:
+        part = part.strip()
+        if not part:
+            continue
+            
+        # Check if the part matches a date pattern like DD-MM-YYYY, DD/MM/YYYY, YYYY-MM-DD
+        if re.search(r'\b\d{1,2}[-./]\d{1,2}[-./]\d{4}\b', part) or re.search(r'\b\d{4}[-./]\d{1,2}[-./]\d{1,2}\b', part):
+            continue
+
+        # Check if the part matches a year range like 2023-2024, 2023-24, 1999-00, etc.
+        # This will match e.g. "2023-2024", "2023-24", "25 2023-2024"
+        if re.search(r'\b(19|20)\d{2}\s*-\s*\d{2,4}\b', part):
+            continue
+            
+        # Split the part by spaces to see if there is a trailing short segment (like a date fragment or noise)
+        words = part.split()
+        if len(words) > 1:
+            last_word = words[-1]
+            last_digits = "".join(filter(str.isdigit, last_word))
+            if len(last_digits) in [1, 2]:
+                # Check if the remaining part before this last word is a valid phone number on its own
+                remaining_part = " ".join(words[:-1])
+                remaining_digits = "".join(filter(str.isdigit, remaining_part))
+                if 7 <= len(remaining_digits) <= 12:
+                    part = remaining_part
+            
+        # Extract digits to check length
+        digits = "".join(filter(str.isdigit, part))
+        
+        # If it's too short (less than 10 digits) or too long (more than 15 digits), discard it.
+        # This filters out small numbers, dates (which have 8 digits), and years.
+        if len(digits) < 10 or len(digits) > 15:
+            continue
+            
+        # If the number is a year range without hyphen but matches 8 digits (e.g. 20232024)
+        if len(digits) == 8 and (digits.startswith("202") or digits.startswith("201")):
+            try:
+                y1 = int(digits[:4])
+                y2 = int(digits[4:])
+                if 1900 <= y1 <= 2100 and 1900 <= y2 <= 2100 and abs(y1 - y2) <= 5:
+                    continue
+            except ValueError:
+                pass
+
+        # Keep the valid phone number
+        cleaned_parts.append(part)
+        
+    if cleaned_parts:
+        return " / ".join(cleaned_parts)
+    return "N/A"
+
+
+
 def get_gemini_model():
-    """Returns the Gemini 2.5 Flash model client."""
-    return genai.GenerativeModel("gemini-2.5-flash")
+    """Returns the Gemini 2.0 Flash model client."""
+    return genai.GenerativeModel("gemini-2.0-flash")
 
 def query_ollama(prompt: str, model_name: str, image_bytes: bytes = None, is_json: bool = False) -> str:
     """Queries local Ollama instance."""
@@ -388,9 +449,10 @@ def process_extracted_info(data: dict, gmaps_address: str, gmaps_phone: str, gma
     # 4. Determine contact number
     contact_number = ""
     if extracted_contact and isinstance(extracted_contact, str) and len(extracted_contact.strip()) > 3 and extracted_contact.lower() not in ["n/a", "none", "null", "not found"]:
-        contact_number = extracted_contact.strip()
-    else:
-        contact_number = gmaps_phone or "N/A"
+        contact_number = clean_contact_number(extracted_contact.strip())
+        
+    if not contact_number or contact_number == "N/A":
+        contact_number = clean_contact_number(gmaps_phone)
         
     return {
         "contact_number": contact_number,
@@ -529,13 +591,14 @@ def extract_address_fallback_rules(text: str, search_area: str) -> dict:
         # Phone heuristic: search for 10-12 digit numbers (potentially split by spaces/dashes)
         phone = ""
         found_phones = []
-        for match in re.finditer(r'\+?[\d\s-]{9,18}', normalized_text):
+        for match in re.finditer(r'\+?[\d\s\-()]{10,22}', normalized_text):
             num = match.group(0).strip()
-            digits = "".join(filter(str.isdigit, num))
-            if len(digits) in [10, 11, 12]:
-                cleaned_num = re.sub(r'\s+', ' ', num).strip()
-                unique_suffix = digits[-10:]
-                if not any("".join(filter(str.isdigit, f))[-10:] == unique_suffix for f in found_phones):
+            cleaned_num = clean_contact_number(num)
+            if cleaned_num and cleaned_num != "N/A":
+                digits = "".join(filter(str.isdigit, cleaned_num))
+                suffix_len = min(10, len(digits))
+                unique_suffix = digits[-suffix_len:] if suffix_len > 0 else digits
+                if not any("".join(filter(str.isdigit, f))[-suffix_len:] == unique_suffix for f in found_phones):
                     found_phones.append(cleaned_num)
         if found_phones:
             phone = " / ".join(found_phones)
@@ -555,7 +618,7 @@ def extract_info_from_website_text(text: str, gmaps_address: str, gmaps_phone: s
     Uses Gemini/Groq/Ollama to extract contact number, full address, postal pincode, and local area name
     strictly from website text, falling back to Google Maps data if website doesn't contain them.
     """
-    cleaned_text = text[:8000] if text else ""
+    cleaned_text = text[:30000] if text else ""
     default_area = extract_area_from_address(gmaps_address, search_area)
     gmaps_pincode = extract_pincode_from_address(gmaps_address)
     
@@ -623,13 +686,14 @@ def extract_info_from_website_text(text: str, gmaps_address: str, gmaps_phone: s
             # Extract phone independently first so we don't lose it if address extraction fails
             extracted_phone = ""
             found_phones = []
-            for match in re.finditer(r'\+?[\d\s-]{9,18}', cleaned_text):
+            for match in re.finditer(r'\+?[\d\s\-()]{10,22}', cleaned_text):
                 num = match.group(0).strip()
-                digits = "".join(filter(str.isdigit, num))
-                if len(digits) in [10, 11, 12]:
-                    cleaned_num = re.sub(r'\s+', ' ', num).strip()
-                    unique_suffix = digits[-10:]
-                    if not any("".join(filter(str.isdigit, f))[-10:] == unique_suffix for f in found_phones):
+                cleaned_num = clean_contact_number(num)
+                if cleaned_num and cleaned_num != "N/A":
+                    digits = "".join(filter(str.isdigit, cleaned_num))
+                    suffix_len = min(10, len(digits))
+                    unique_suffix = digits[-suffix_len:] if suffix_len > 0 else digits
+                    if not any("".join(filter(str.isdigit, f))[-suffix_len:] == unique_suffix for f in found_phones):
                         found_phones.append(cleaned_num)
             if found_phones:
                 extracted_phone = " / ".join(found_phones)
@@ -712,20 +776,39 @@ def evaluate_website_screenshot(website_url: str) -> tuple:
             contact_url = None
             try:
                 links = page.query_selector_all('a')
+                best_href = None
+                best_score = 0
                 for link in links:
                     href = link.get_attribute("href")
+                    if not href:
+                        continue
                     link_text = (link.inner_text() or "").strip().lower()
-                    if href and any(keyword in link_text for keyword in ["contact", "reach", "about"]):
-                        import urllib.parse
-                        contact_url = urllib.parse.urljoin(website_url, href)
-                        break
+                    href_lower = href.lower()
+                    
+                    score = 0
+                    if "contact" in link_text or "contact" in href_lower:
+                        score = 3
+                    elif "reach" in link_text or "reach" in href_lower:
+                        score = 2
+                    elif "about" in link_text or "about" in href_lower:
+                        score = 1
+                        
+                    if score > best_score:
+                        best_score = score
+                        best_href = href
+                        if score == 3: # Found high-priority contact link, stop searching
+                            break
+                            
+                if best_href:
+                    import urllib.parse
+                    contact_url = urllib.parse.urljoin(website_url, best_href)
             except Exception as link_err:
                 logger.warning(f"Error finding contact link: {link_err}")
                 
             if contact_url and contact_url != website_url:
                 try:
                     logger.info(f"Navigating to contact page: {contact_url}")
-                    page.goto(contact_url, timeout=15000, wait_until="domcontentloaded")
+                    page.goto(contact_url, timeout=25000, wait_until="domcontentloaded")
                     page.wait_for_timeout(1000)
                     contact_text = page.evaluate("() => document.body.innerText") or ""
                 except Exception as contact_err:

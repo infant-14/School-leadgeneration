@@ -30,6 +30,9 @@ export class ScraperService {
 
     this.isScraping = true;
     let existingFile: string | null = null;
+    
+    // Ensure limit is a valid positive integer, default to 30 if invalid or <= 0
+    const sanitizedLimit = isNaN(Number(limit)) || Number(limit) <= 0 ? 30 : Math.floor(Number(limit));
 
     try {
       this.scraperGateway.broadcast(`> Launching lead scraper for '${type}' in '${area}'...`);
@@ -44,12 +47,12 @@ export class ScraperService {
       existingFile = path.join(this.rootDir, 'backend_python', tempFileName);
       fs.writeFileSync(existingFile, JSON.stringify(existingNames, null, 2));
 
-      this.logger.log(`Spawning scraper process: ${pythonExe} ${mainScript} --area "${area}" --type "${type}" --limit ${limit} --existing-file "${existingFile}"`);
+      this.logger.log(`Spawning scraper process: ${pythonExe} ${mainScript} --area "${area}" --type "${type}" --limit ${sanitizedLimit} --existing-file "${existingFile}"`);
 
       // Spawn the python scraper pipeline
       const child = spawn(
         `"${pythonExe}"`, 
-        ['-W', 'ignore', '-u', `"${mainScript}"`, '--area', `"${area}"`, '--type', `"${type}"`, '--limit', `${limit}`, '--existing-file', `"${existingFile}"`], 
+        ['-W', 'ignore', '-u', `"${mainScript}"`, '--area', `"${area}"`, '--type', `"${type}"`, '--limit', `${sanitizedLimit}`, '--existing-file', `"${existingFile}"`], 
         {
           cwd: this.rootDir,
           shell: true,

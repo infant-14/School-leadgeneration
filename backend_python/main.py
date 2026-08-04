@@ -74,14 +74,6 @@ def run_lead_pipeline(area: str, school_type: str, limit: int, output_file: str 
         logger.info(f"Lead Limit:  {limit}")
         logger.info("=" * 60)
         
-        # 1. Scrape basic info from Google Maps
-        max_results = limit if limit > 0 else 30
-        raw_leads = scrape_google_maps_leads(area, school_type, max_results=max_results)
-        
-        if not raw_leads:
-            logger.error("No leads were found or scraped. Exiting.")
-            return []
-            
         # Load existing leads names to skip
         import json
         existing_names = []
@@ -92,6 +84,14 @@ def run_lead_pipeline(area: str, school_type: str, limit: int, output_file: str 
                 logger.info(f"Loaded {len(existing_names)} existing school names to skip.")
             except Exception as e:
                 logger.error(f"Error loading existing-file: {e}")
+
+        # 1. Scrape basic info from Google Maps, passing existing names to skip already processed leads early
+        max_results = limit if limit > 0 else 30
+        raw_leads = scrape_google_maps_leads(area, school_type, max_results=max_results, existing_names=existing_names)
+        
+        if not raw_leads:
+            logger.error("No leads were found or scraped. Exiting.")
+            return []
 
         enriched_leads = []
         
