@@ -4,7 +4,20 @@ from playwright.sync_api import sync_playwright
 
 logger = logging.getLogger(__name__)
 
-def scrape_google_maps_leads(area: str, school_type: str, max_results: int = 15):
+def extract_school_name_from_url(url: str) -> str:
+    """Extracts and unquotes the school name from a Google Maps place URL."""
+    try:
+        parts = url.split("/maps/place/")
+        if len(parts) > 1:
+            name_part = parts[1].split("/")[0]
+            # Replace '+' with spaces and decode url characters
+            name = urllib.parse.unquote(name_part.replace("+", " "))
+            return name.strip()
+    except Exception:
+        pass
+    return ""
+
+def scrape_google_maps_leads(area: str, school_type: str, max_results: int = 15, existing_names: list = None):
     """
     Scrapes school leads from Google Maps using Playwright.
     Returns a list of dictionaries with school details.
@@ -55,15 +68,16 @@ def scrape_google_maps_leads(area: str, school_type: str, max_results: int = 15)
                 logger.error("No results container found and not redirected. Search query might have returned 0 results.")
                 browser.close()
                 return leads
-
+ 
         # Collect place URLs in exact rank order as we scroll
         place_urls = []
         scroll_attempts = 0
         max_scroll_attempts = 60
         last_height = 0
         no_change_count = 0
+        new_leads_count = 0
         
-        while len(place_urls) < max_results and scroll_attempts < max_scroll_attempts:
+        while new_leads_count < max_results and scroll_attempts < max_scroll_attempts:
             # Get list of place links in current view
             feed_el = page.query_selector(scrollable_selector)
             place_elements = feed_el.query_selector_all('a[href*="/maps/place/"]') if feed_el else page.query_selector_all('a[href*="/maps/place/"]')
@@ -73,14 +87,25 @@ def scrape_google_maps_leads(area: str, school_type: str, max_results: int = 15)
                 href = el.get_attribute("href")
                 if href and href not in place_urls:
                     place_urls.append(href)
-                    if len(place_urls) >= max_results:
+                    
+                    # Check if this lead is new or already exists in database
+                    is_new = True
+                    if existing_names:
+                        url_school_name = extract_school_name_from_url(href)
+                        if url_school_name and url_school_name.lower().strip() in existing_names:
+                            is_new = False
+                            
+                    if is_new:
+                        new_leads_count += 1
+                        
+                    if new_leads_count >= max_results:
                         break
             
-            logger.info(f"Collected {len(place_urls)} unique place links on scroll attempt {scroll_attempts+1}")
+            logger.info(f"Collected {len(place_urls)} unique place links. Found {new_leads_count}/{max_results} new leads on scroll attempt {scroll_attempts+1}")
             
-            if len(place_urls) >= max_results:
+            if new_leads_count >= max_results:
                 break
-
+ 
             # Scroll to the bottom of the sidebar to trigger next lazy load batch
             page.evaluate(
                 f"""
@@ -136,6 +161,12 @@ def scrape_google_maps_leads(area: str, school_type: str, max_results: int = 15)
         
         # Visit each place page and extract info
         for idx, url in enumerate(place_urls, 1):
+            if existing_names:
+                url_school_name = extract_school_name_from_url(url)
+                if url_school_name and url_school_name.lower().strip() in existing_names:
+                    logger.info(f"Skipping lead {idx}/{len(place_urls)}: '{url_school_name}' already exists in database.")
+                    continue
+                    
             logger.info(f"Processing lead {idx}/{len(place_urls)}: {url}")
             try:
                 page.goto(url, timeout=12000)
@@ -150,6 +181,7 @@ def scrape_google_maps_leads(area: str, school_type: str, max_results: int = 15)
         browser.close()
         
     return leads
+
 
 def parse_place_details(page, area: str) -> dict:
     """
