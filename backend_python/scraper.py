@@ -217,8 +217,56 @@ def parse_place_details(page, area: str) -> dict:
                 parsed_wrapper = urllib.parse.parse_qs(urllib.parse.urlparse(website_url).query)
                 website_url = parsed_wrapper.get("q", [website_url])[0]
                 
-        # Disabled Yahoo Search fallback to avoid matching incorrect branches of common school names.
-        # Website URL will remain empty/N/A if not listed on Google Maps.
+        # Smart Search fallback if website is missing on Google Maps
+        if not website_url:
+            logger.info(f"Website URL missing on Google Maps for '{school_name}'. Querying Search fallback...")
+            try:
+                search_page = page.context.new_page()
+                search_query = f"{school_name} {area} official website"
+                search_url = f"https://search.yahoo.com/search?p={urllib.parse.quote_plus(search_query)}"
+                search_page.goto(search_url, timeout=12000)
+                search_page.wait_for_timeout(2000)
+                
+                ignored_domains = [
+                    "yahoo.com", "google.com", "facebook.com", "instagram.com", "twitter.com", "linkedin.com",
+                    "youtube.com", "wikipedia.org", "justdial.com", "sulekha.com", "indiamart.com",
+                    "schoolmykids.com", "shiksha.com", "educationworld.in", "careerindia.com",
+                    "indiahall.in", "dialastreet.com", "yelp.com", "tripadvisor.com", "localnears.com",
+                    "kneora.com", "easymap", "location", "place", "address", "contact", "phone", "mapmyindia",
+                    "indialocal", "schooling", "edustoke", "targetstudy", "vidyaland", "yell", "glassdoor",
+                    "mouthshut", "easymap", "maps", "location", "place", "address", "contact", "phone", "map",
+                    "web", "search", "yahoo", "bing", "ask", "pinterest.com", "wordpress.com", "blogspot.com"
+                ]
+                
+                links = search_page.query_selector_all('a[href]')
+                for link in links:
+                    href = link.get_attribute("href")
+                    if href and href.startswith("http"):
+                        parsed_domain = urllib.parse.urlparse(href).netloc.lower()
+                        if not any(ignored in parsed_domain for ignored in ignored_domains):
+                            # Extract clean alphanumeric keywords from school name to verify relevance
+                            import re
+                            clean_name = re.sub(r'[^a-zA-Z0-9\s]', ' ', school_name)
+                            ignored_words = {
+                                "school", "schools", "academy", "academies", "international", "matriculation", 
+                                "matric", "higher", "secondary", "public", "private", "trust", "cbse", "nursery", 
+                                "primary", "vidyalaya", "vidhyalaya", "education", "educational", "global"
+                            }
+                            school_keywords = [w.lower() for w in clean_name.split() if len(w) > 3 and w.lower() not in ignored_words]
+                            
+                            # Verify that the link text or parsed domain contains at least one unique school keyword
+                            link_text = link.inner_text().strip().lower()
+                            has_keyword_match = True
+                            if school_keywords:
+                                has_keyword_match = any(kw in link_text or kw in parsed_domain for kw in school_keywords)
+                                
+                            if has_keyword_match:
+                                website_url = href
+                                logger.info(f"Found fallback website: {website_url}")
+                                break
+                search_page.close()
+            except Exception as se:
+                logger.warning(f"Error in search website fallback: {se}")
                 
         logger.info(f"Website URL: {website_url}")
         
@@ -252,8 +300,8 @@ def parse_place_details(page, area: str) -> dict:
                 import re
                 patterns = [
                     r'\+91[\s-]?\d{10}',
-                    r'\b044[\s-]?\d{7,8}\b',
-                    r'\b[789]\d{4}[\s-]?\d{5}\b',
+                    r'\b0\d{2,4}[\s-]?\d{6,8}\b',
+                    r'\b[6789]\d{4}[\s-]?\d{5}\b',
                     r'\b\d{4}[\s-]?\d{3}[\s-]?\d{3}\b'
                 ]
                 found_numbers = []

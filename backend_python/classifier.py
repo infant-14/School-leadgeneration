@@ -45,8 +45,36 @@ def clean_contact_number(contact_str: str) -> str:
         return "N/A"
         
     # Split multiple phone numbers if present
-    parts = re.split(r'[/,;]', contact_str)
+    # Support separators: slashes, commas, semicolons, ampersands, words 'and'/'or', or multiple spaces
+    initial_parts = re.split(r'[/,;&]|\band\b|\bor\b|\s{2,}', contact_str, flags=re.IGNORECASE)
+    parts = []
+    
+    for p in initial_parts:
+        p = p.strip()
+        if not p:
+            continue
+            
+        # Check if the part contains space-separated components that are independent phone numbers
+        # e.g., "9876543210 9876543211" or "04422292674 9876543210"
+        # We avoid splitting standard formatted numbers (like "044 2229 2674" or "+91 9876543210")
+        words = p.split()
+        if len(words) > 1:
+            is_multiple = True
+            for w in words:
+                w_digits = "".join(filter(str.isdigit, w))
+                if len(w_digits) < 7 or len(w_digits) > 12:
+                    is_multiple = False
+                    break
+            if is_multiple:
+                parts.extend(words)
+                continue
+                
+        parts.append(p)
+        
     cleaned_parts = []
+    
+    # Track the last detected STD/area code (e.g., "044" or "+9144")
+    last_std_code = ""
     
     for part in parts:
         part = part.strip()
@@ -58,7 +86,6 @@ def clean_contact_number(contact_str: str) -> str:
             continue
 
         # Check if the part matches a year range like 2023-2024, 2023-24, 1999-00, etc.
-        # This will match e.g. "2023-2024", "2023-24", "25 2023-2024"
         if re.search(r'\b(19|20)\d{2}\s*-\s*\d{2,4}\b', part):
             continue
             
@@ -74,12 +101,22 @@ def clean_contact_number(contact_str: str) -> str:
                 if 7 <= len(remaining_digits) <= 12:
                     part = remaining_part
             
+        # Try to find if there is an area code (starts with 0 and has 3 to 5 digits, or starts with +91)
+        # e.g., in "044 - 2229 2674", the STD code is "044"
+        std_match = re.match(r'^(0\d{2,4}|\+91\s*\d{2,4})\b', part)
+        if std_match:
+            last_std_code = std_match.group(1)
+        else:
+            # If the current part has 7 or 8 digits and we have a last_std_code, prepend it
+            digits_only = "".join(filter(str.isdigit, part))
+            if len(digits_only) in [7, 8] and last_std_code:
+                part = f"{last_std_code}-{part}"
+
         # Extract digits to check length
         digits = "".join(filter(str.isdigit, part))
         
-        # If it's too short (less than 10 digits) or too long (more than 15 digits), discard it.
-        # This filters out small numbers, dates (which have 8 digits), and years.
-        if len(digits) < 10 or len(digits) > 15:
+        # Allow 7 to 15 digits to include local landline numbers
+        if len(digits) < 7 or len(digits) > 15:
             continue
             
         # If the number is a year range without hyphen but matches 8 digits (e.g. 20232024)
@@ -470,6 +507,16 @@ def extract_address_fallback_rules(text: str, search_area: str) -> dict:
     if not text:
         return {}
         
+    # Normalize different dash characters and unicode replacement chars to standard hyphens on the raw text first
+    text = (
+        text
+        .replace('–', '-')
+        .replace('—', '-')
+        .replace('\u2013', '-')
+        .replace('\u2014', '-')
+        .replace('\ufffd', '-')
+    )
+    
     # 1. Clean the text, normalize spaces and newlines
     normalized_text = re.sub(r'\s+', ' ', text)
     
@@ -588,10 +635,10 @@ def extract_address_fallback_rules(text: str, search_area: str) -> dict:
         # Extract area name
         area = extract_area_from_address(best_candidate, search_area)
         
-        # Phone heuristic: search for 10-12 digit numbers (potentially split by spaces/dashes)
+        # Phone heuristic: search for numbers (allowing list separators like slashes/commas/semicolons and lengths up to 45)
         phone = ""
         found_phones = []
-        for match in re.finditer(r'\+?[\d\s\-()]{10,22}', normalized_text):
+        for match in re.finditer(r'\+?[\d \t\-()/,;]{7,45}', text):
             num = match.group(0).strip()
             cleaned_num = clean_contact_number(num)
             if cleaned_num and cleaned_num != "N/A":
@@ -618,6 +665,16 @@ def extract_info_from_website_text(text: str, gmaps_address: str, gmaps_phone: s
     Uses Gemini/Groq/Ollama to extract contact number, full address, postal pincode, and local area name
     strictly from website text, falling back to Google Maps data if website doesn't contain them.
     """
+    # Normalize different dash characters and unicode replacement chars to standard hyphens
+    if text:
+        text = (
+            text
+            .replace('–', '-')
+            .replace('—', '-')
+            .replace('\u2013', '-')
+            .replace('\u2014', '-')
+            .replace('\ufffd', '-')
+        )
     cleaned_text = text[:30000] if text else ""
     default_area = extract_area_from_address(gmaps_address, search_area)
     gmaps_pincode = extract_pincode_from_address(gmaps_address)
@@ -686,7 +743,7 @@ def extract_info_from_website_text(text: str, gmaps_address: str, gmaps_phone: s
             # Extract phone independently first so we don't lose it if address extraction fails
             extracted_phone = ""
             found_phones = []
-            for match in re.finditer(r'\+?[\d\s\-()]{10,22}', cleaned_text):
+            for match in re.finditer(r'\+?[\d \t\-()/,;]{7,45}', cleaned_text):
                 num = match.group(0).strip()
                 cleaned_num = clean_contact_number(num)
                 if cleaned_num and cleaned_num != "N/A":
@@ -744,9 +801,28 @@ def evaluate_website_screenshot(website_url: str) -> tuple:
             page = context.new_page()
             
             # Slightly longer timeout with domcontentloaded to avoid load event timeouts on slow school sites
-            page.goto(website_url, timeout=20000, wait_until="domcontentloaded")
+            try:
+                page.goto(website_url, timeout=20000, wait_until="domcontentloaded")
+            except Exception as e:
+                # If we failed to resolve www. domain, try without www.
+                if "ERR_NAME_NOT_RESOLVED" in str(e) and "://www." in website_url:
+                    alternative_url = website_url.replace("://www.", "://", 1)
+                    logger.info(f"Failed to resolve {website_url}. Retrying alternative URL without www: {alternative_url}")
+                    try:
+                        page.close()
+                    except Exception:
+                        pass
+                    page = context.new_page()
+                    page.goto(alternative_url, timeout=20000, wait_until="domcontentloaded")
+                else:
+                    raise e
+            # Wait for content to render (especially for single page apps with loader screens)
+            try:
+                page.wait_for_function("() => document.body.innerText.trim().length > 100", timeout=8000)
+            except Exception:
+                pass
             resolved_url = page.url
-            page.wait_for_timeout(2000)  # Wait for animations to settle
+            page.wait_for_timeout(1000)  # Extra settle time
             screenshot_bytes = page.screenshot(full_page=False)
             
             # Get homepage text and technical audit stats
