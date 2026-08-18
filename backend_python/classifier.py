@@ -286,6 +286,11 @@ def classify_institution_type(school_name: str, target_type: str = "Matriculatio
     Classifies the institution type (e.g. CBSE, Matriculation, International)
     based on the school name.
     """
+    # Check if the target type is school-related
+    is_school = any(k in target_type.lower() for k in ["school", "academy", "vidyalaya", "education", "college", "institute", "class"])
+    if not is_school:
+        return target_type.title()
+
     # Fast path keyword matching (100% accurate, no API call needed)
     name_lower = school_name.lower()
     if "matriculation" in name_lower or "matric" in name_lower:
@@ -690,10 +695,10 @@ def extract_info_from_website_text(text: str, gmaps_address: str, gmaps_phone: s
         return fallback_data
         
     prompt = (
-        "You are an information extraction assistant. Analyze the following text extracted from a school's website "
-        "and find the school's full address, the 6-digit postal pincode, the specific local area/neighborhood name corresponding to that address, and the contact phone numbers.\n\n"
+        "You are an information extraction assistant. Analyze the following text extracted from a business's website "
+        "and find the business's full address, the 6-digit postal pincode, the specific local area/neighborhood name corresponding to that address, and the contact phone numbers.\n\n"
         "Instructions:\n"
-        "1. Extract the school's postal address from the website text. If the website text does not contain a full/postal address, return null in the 'address' field. (Do NOT use Google Maps reference or any other source to guess the address if not in the text).\n"
+        "1. Extract the business's postal address from the website text. If the website text does not contain a full/postal address, return null in the 'address' field. (Do NOT use Google Maps reference or any other source to guess the address if not in the text).\n"
         "2. Extract the 6-digit postal pincode from the website text. If not found, return null in the 'pincode' field.\n"
         "3. Extract the local area/neighborhood name (e.g. Sholinganallur, Medavakkam, Srirangam, Tambaram, etc.) that the pincode and address refer to. If not found, return null in the 'area_name' field.\n"
         "4. Extract all contact phone numbers from the website text. If multiple phone numbers are found, return them joined by ' / ' (e.g. '044-1234567 / 9876543210'). If not found, return null in the 'contact_number' field.\n\n"
@@ -756,8 +761,19 @@ def extract_info_from_website_text(text: str, gmaps_address: str, gmaps_phone: s
                 extracted_phone = " / ".join(found_phones)
 
             heuristic_data = extract_address_fallback_rules(cleaned_text, search_area)
-            if heuristic_data and heuristic_data.get("address"):
-                logger.info("AI failed or was unauthorized. Successfully fell back to rule-based address extraction.")
+            
+            # Verify the address is valid and not a software vendor copyright notice or outside our search city
+            is_valid_address = False
+            addr_candidate = heuristic_data.get("address", "").lower() if heuristic_data else ""
+            if addr_candidate:
+                has_area = search_area.lower() in addr_candidate
+                has_city = any(city in addr_candidate for city in ["chennai", "trichy", "tiruchirappalli", "chengalpattu", "kanchipuram", "medavakkam", "shollinganallur", "srirangam", "tambaram"])
+                is_copyright = any(x in addr_candidate for x in ["wondersoft", "powered by", "copyright", "©", "all rights reserved", "designed by"])
+                if (has_area or has_city) and not is_copyright:
+                    is_valid_address = True
+                    
+            if heuristic_data and heuristic_data.get("address") and is_valid_address:
+                logger.info("AI failed. Successfully fell back to validated rule-based address extraction.")
                 return {
                     "contact_number": extracted_phone or heuristic_data.get("contact_number") or fallback_data["contact_number"],
                     "address": heuristic_data["address"],
@@ -782,6 +798,24 @@ def evaluate_website_screenshot(website_url: str) -> tuple:
     # 1. Handle missing website
     if not website_url:
         return "Fresh", "No website found. Needs a fresh design built.", "", ""
+
+    # Detect if it's a directory profile
+    import urllib.parse
+    parsed_domain = urllib.parse.urlparse(website_url).netloc.lower()
+    directory_domains = [
+        "promanage.biz", "promanage.co", "promanage.info", "justdial.com", "sulekha.com", "indiamart.com",
+        "yelp.com", "tripadvisor.com", "facebook.com", "instagram.com", "linkedin.com", "twitter.com",
+        "youtube.com", "wikipedia.org", "pinterest.com", "wordpress.com", "blogspot.com", "glassdoor.com",
+        "mouthshut.com", "nicelocal.in", "nicelocal.com", "threebestrated.in", "tradeindia.com", 
+        "localnears.com", "vyaparify.com", "near.me", "dialastreet.com", "yell.com", "retailorders.in", "retailorders"
+    ]
+    if any(dir_dom in parsed_domain for dir_dom in directory_domains):
+        dir_name = "General Directory"
+        for d in directory_domains:
+            if d in parsed_domain:
+                dir_name = d.split(".")[0].title()
+                break
+        return "Directory", f"No individual website. Listed via directory profile ({dir_name}). Excellent custom website prospect.", "", website_url
 
     screenshot_bytes = None
     website_text = ""
@@ -951,8 +985,8 @@ def evaluate_website_screenshot(website_url: str) -> tuple:
         return appearance_res, remarks_res, website_text, resolved_url
 
     prompt = (
-        "You are an expert website designer reviewing school websites to identify specific design and layout issues for redesign services. "
-        "Look at this screenshot of the school website. "
+        "You are an expert website designer reviewing business websites to identify specific design and layout issues for redesign services. "
+        "Look at this screenshot of the website. "
         "1. Is the design modern, clean, mobile-friendly and professional? Choose either 'Good' or 'Redesign'. "
         "2. Provide a list of specific, detailed visual/functional issues found, formatted as bullet points (using the '•' character, each issue on a new line). "
         "Identify exact problems if any, such as:\n"
@@ -1103,8 +1137,8 @@ def evaluate_institution_atmosphere(photo_url: str, rating: str = "") -> str:
         return _fallback_atmosphere_rating(rating)
 
     prompt = (
-        "Look at this Google Maps photo of a school campus. "
-        "Assess if the school buildings, grounds, and atmosphere look well-maintained, welcoming, and high-quality ('Good') "
+        "Look at this Google Maps photo of the business storefront/location. "
+        "Assess if the buildings, storefront, and atmosphere look well-maintained, welcoming, and high-quality ('Good') "
         "or if it looks run-down, poorly painted, old, or unappealing ('Bad'). "
         "Respond with only a single word: 'Good' or 'Bad'."
     )

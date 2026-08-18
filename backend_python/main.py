@@ -143,8 +143,9 @@ def run_lead_pipeline(area: str, school_type: str, limit: int, output_file: str 
             if resolved_url:
                 website_url = resolved_url
             
-            # Refine type based on website text keywords if name-based classification was ambiguous
-            if inst_type.lower() not in ["cbse", "matriculation", "international"] or inst_type == "Other":
+            # Refine type based on website text keywords if name-based classification was ambiguous (only for school targets)
+            is_school = any(k in school_type.lower() for k in ["school", "academy", "vidyalaya", "education", "college", "institute", "class"])
+            if is_school and (inst_type.lower() not in ["cbse", "matriculation", "international"] or inst_type == "Other"):
                 if website_text:
                     web_lower = website_text.lower()
                     if "cbse" in web_lower or "central board" in web_lower:

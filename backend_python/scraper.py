@@ -22,12 +22,7 @@ def scrape_google_maps_leads(area: str, school_type: str, max_results: int = 15,
     Scrapes school leads from Google Maps using Playwright.
     Returns a list of dictionaries with school details.
     """
-    st_clean = school_type.strip().lower()
-    # Normalize school_type: if it doesn't contain "school" or similar keywords, append "schools"
-    if not any(k in st_clean for k in ["school", "academy", "institution", "college"]):
-        query_type = f"{school_type} schools"
-    else:
-        query_type = school_type
+    query_type = school_type
         
     query = f"{query_type} in {area}"
     search_url = f"https://www.google.com/maps/search/{urllib.parse.quote_plus(query)}"
@@ -227,43 +222,78 @@ def parse_place_details(page, area: str) -> dict:
                 search_page.goto(search_url, timeout=12000)
                 search_page.wait_for_timeout(2000)
                 
-                ignored_domains = [
-                    "yahoo.com", "google.com", "facebook.com", "instagram.com", "twitter.com", "linkedin.com",
-                    "youtube.com", "wikipedia.org", "justdial.com", "sulekha.com", "indiamart.com",
-                    "schoolmykids.com", "shiksha.com", "educationworld.in", "careerindia.com",
-                    "indiahall.in", "dialastreet.com", "yelp.com", "tripadvisor.com", "localnears.com",
-                    "kneora.com", "easymap", "location", "place", "address", "contact", "phone", "mapmyindia",
-                    "indialocal", "schooling", "edustoke", "targetstudy", "vidyaland", "yell", "glassdoor",
-                    "mouthshut", "easymap", "maps", "location", "place", "address", "contact", "phone", "map",
-                    "web", "search", "yahoo", "bing", "ask", "pinterest.com", "wordpress.com", "blogspot.com"
+                # Suffixes and domains always to ignore (search engines and utilities)
+                utility_domains = [
+                    "yahoo.com", "google.com", "bing.com", "ask.com", "wikipedia.org", "kneora.com", 
+                    "easymap", "location", "place", "address", "contact", "phone", "mapmyindia", 
+                    "indialocal", "schooling", "edustoke", "targetstudy", "vidyaland", "yell", 
+                    "maps", "map", "web", "search"
+                ]
+                
+                # General Directory / Profile portals list
+                directory_domains = [
+                    "promanage.biz", "promanage.co", "promanage.info", "justdial.com", "sulekha.com", "indiamart.com",
+                    "magicpin.in", "magicpin.co", "yelp.com", "tripadvisor.com", "facebook.com", "instagram.com", 
+                    "linkedin.com", "twitter.com", "youtube.com", "pinterest.com", "wordpress.com", "blogspot.com", 
+                    "glassdoor.com", "mouthshut.com", "nicelocal.in", "nicelocal.com", "threebestrated.in", 
+                    "tradeindia.com", "localnears.com", "vyaparify.com", "near.me", "dialastreet.com", "yell.com",
+                    "retailorders.in", "retailorders", "schoolmykids.com", "shiksha.com", "educationworld.in", 
+                    "careerindia.com", "indiahall.in"
                 ]
                 
                 links = search_page.query_selector_all('a[href]')
+                
+                # Helper to extract relevant keywords for verification
+                import re
+                clean_name = re.sub(r'[^a-zA-Z0-9\s]', ' ', school_name)
+                ignored_words = {
+                    "school", "schools", "academy", "academies", "international", "matriculation", 
+                    "matric", "higher", "secondary", "public", "private", "trust", "cbse", "nursery", 
+                    "primary", "vidyalaya", "vidhyalaya", "education", "educational", "global",
+                    "pharmacy", "pharmacies", "medical", "chemist", "store", "stores", "shop", "shops",
+                    "tea", "coffee", "restaurant", "cafe", "cafeteria", "hotel", "supermarket", "grocery",
+                    "clinic", "hospital", "services", "private", "limited", "pvt", "ltd", "co", "company",
+                    "association", "society", "club", "hub", "point", "zone", "house"
+                }
+                school_keywords = [w.lower() for w in clean_name.split() if len(w) > 3 and w.lower() not in ignored_words]
+                
+                # --- PASS 1: Search for Official Standalone Website ---
                 for link in links:
                     href = link.get_attribute("href")
                     if href and href.startswith("http"):
                         parsed_domain = urllib.parse.urlparse(href).netloc.lower()
-                        if not any(ignored in parsed_domain for ignored in ignored_domains):
-                            # Extract clean alphanumeric keywords from school name to verify relevance
-                            import re
-                            clean_name = re.sub(r'[^a-zA-Z0-9\s]', ' ', school_name)
-                            ignored_words = {
-                                "school", "schools", "academy", "academies", "international", "matriculation", 
-                                "matric", "higher", "secondary", "public", "private", "trust", "cbse", "nursery", 
-                                "primary", "vidyalaya", "vidhyalaya", "education", "educational", "global"
-                            }
-                            school_keywords = [w.lower() for w in clean_name.split() if len(w) > 3 and w.lower() not in ignored_words]
-                            
-                            # Verify that the link text or parsed domain contains at least one unique school keyword
+                        # Ignore utility pages AND directories in Pass 1
+                        if not any(u in parsed_domain for u in utility_domains) and not any(d in parsed_domain for d in directory_domains):
                             link_text = link.inner_text().strip().lower()
                             has_keyword_match = True
                             if school_keywords:
                                 has_keyword_match = any(kw in link_text or kw in parsed_domain for kw in school_keywords)
-                                
-                            if has_keyword_match:
+                            
+                            has_area_match = (area.lower() in link_text or area.lower() in parsed_domain)
+                            if has_keyword_match and has_area_match:
                                 website_url = href
-                                logger.info(f"Found fallback website: {website_url}")
+                                logger.info(f"Found fallback official website: {website_url}")
                                 break
+                                
+                # --- PASS 2: Search for Directory Profile as Fallback ---
+                if not website_url:
+                    for link in links:
+                        href = link.get_attribute("href")
+                        if href and href.startswith("http"):
+                            parsed_domain = urllib.parse.urlparse(href).netloc.lower()
+                            # Allow directories but still ignore utility search engines
+                            if not any(u in parsed_domain for u in utility_domains) and any(d in parsed_domain for d in directory_domains):
+                                link_text = link.inner_text().strip().lower()
+                                has_keyword_match = True
+                                if school_keywords:
+                                    has_keyword_match = any(kw in link_text or kw in parsed_domain for kw in school_keywords)
+                                
+                                has_area_match = (area.lower() in link_text or area.lower() in parsed_domain)
+                                if has_keyword_match and has_area_match:
+                                    website_url = href
+                                    logger.info(f"Found fallback directory website: {website_url}")
+                                    break
+                                    
                 search_page.close()
             except Exception as se:
                 logger.warning(f"Error in search website fallback: {se}")
