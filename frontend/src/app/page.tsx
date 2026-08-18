@@ -305,7 +305,7 @@ export default function LeadGenWorkspace() {
   // Manual Lead Creation States
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [newSchoolName, setNewSchoolName] = useState("");
-  const [newInstitutionType, setNewInstitutionType] = useState("Matriculation");
+  const [newInstitutionType, setNewInstitutionType] = useState("Other");
   const [newLocation, setNewLocation] = useState("");
   const [newAddress, setNewAddress] = useState("");
   const [newPincode, setNewPincode] = useState("");
@@ -454,7 +454,7 @@ export default function LeadGenWorkspace() {
   const handleAddLeadSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newSchoolName || !newLocation) {
-      alert("Please fill in School Name and Target Area / Location.");
+      alert("Please fill in Business Name and Target Area / Location.");
       return;
     }
     setIsAddLoading(true);
@@ -848,13 +848,13 @@ export default function LeadGenWorkspace() {
     };
 
     const headers = [
-      "School Name",
+      "Business Name",
       "Website URL",
       "Contact Number",
       "Area Name",
-      "School Address",
+      "Address",
       "Pincode",
-      "Institution Type",
+      "Category / Type",
       "Appearance",
       "Remarks",
       "Atmosphere",
@@ -892,7 +892,7 @@ export default function LeadGenWorkspace() {
     link.setAttribute("href", url);
     link.setAttribute(
       "download",
-      `school_leads_${new Date().toISOString().split("T")[0]}.csv`,
+      `business_leads_${new Date().toISOString().split("T")[0]}.csv`,
     );
     link.style.visibility = "hidden";
     document.body.appendChild(link);
@@ -1185,7 +1185,7 @@ export default function LeadGenWorkspace() {
                 <th
                   className={`sticky top-0 z-10 p-3 border-b border-r min-w-[150px] ${isDarkMode ? "bg-zinc-850 border-zinc-800 text-zinc-300" : "bg-zinc-50 border-[#E2E8F0] text-zinc-500"}`}
                 >
-                  School Name
+                  Business Name
                 </th>
                 <th
                   className={`sticky top-0 z-10 p-3 border-b border-r min-w-[120px] ${isDarkMode ? "bg-zinc-850 border-zinc-800 text-zinc-300" : "bg-zinc-50 border-[#E2E8F0] text-zinc-500"}`}
@@ -1195,7 +1195,7 @@ export default function LeadGenWorkspace() {
                 <th
                   className={`sticky top-0 z-10 p-3 text-center border-b border-r min-w-[120px] ${isDarkMode ? "bg-zinc-850 border-zinc-800 text-zinc-300" : "bg-zinc-50 border-[#E2E8F0] text-zinc-500"}`}
                 >
-                  Institution Type
+                  Category / Type
                 </th>
                 <th
                   className={`sticky top-0 z-10 p-3 text-center border-b border-r min-w-[100px] ${isDarkMode ? "bg-zinc-850 border-zinc-800 text-zinc-300" : "bg-zinc-50 border-[#E2E8F0] text-zinc-500"}`}
@@ -1225,7 +1225,7 @@ export default function LeadGenWorkspace() {
                 <th
                   className={`sticky top-0 z-10 p-3 border-b border-r min-w-[200px] ${isDarkMode ? "bg-zinc-850 border-zinc-800 text-zinc-300" : "bg-zinc-50 border-[#E2E8F0] text-zinc-500"}`}
                 >
-                  School Address
+                  Address
                 </th>
                 <th
                   className={`sticky top-0 z-10 p-3 border-b border-r min-w-[100px] ${isDarkMode ? "bg-zinc-850 border-zinc-800 text-zinc-300" : "bg-zinc-50 border-[#E2E8F0] text-zinc-500"}`}
@@ -1237,6 +1237,7 @@ export default function LeadGenWorkspace() {
                 >
                   Appearance
                 </th>
+
                 <th
                   className={`sticky top-0 z-10 p-3 border-b min-w-[200px] ${
                     showActions ? "border-r" : ""
@@ -1385,9 +1386,11 @@ export default function LeadGenWorkspace() {
                         className={`inline-block font-extrabold px-2.5 py-0.5 rounded text-[10px] ${
                           lead.appearance === "Redesign"
                             ? "bg-amber-50 text-amber-700 border border-amber-200/50"
-                            : lead.appearance === "Fresh"
-                              ? "bg-blue-50 text-blue-700 border border-blue-200/50"
-                              : "bg-emerald-50 text-emerald-700 border border-emerald-200/50"
+                            : lead.appearance === "Directory"
+                              ? "bg-purple-50 text-purple-700 border border-purple-200/50"
+                              : lead.appearance === "Fresh"
+                                ? "bg-blue-50 text-blue-700 border border-blue-200/50"
+                                : "bg-emerald-50 text-emerald-700 border border-emerald-200/50"
                         }`}
                       >
                         {lead.appearance || "Redesign"}
@@ -1730,7 +1733,7 @@ export default function LeadGenWorkspace() {
               }`}
             >
               <Users className="h-4.5 w-4.5" />
-              School Database
+              Leads Database
             </button>
             <button
               onClick={() => setActiveTab("config")}
@@ -1804,7 +1807,7 @@ export default function LeadGenWorkspace() {
         >
           <div className="flex items-center gap-2">
             <span className="text-xs bg-[#e0f2f6] text-[#00637C] font-bold px-2.5 py-1 rounded-full uppercase tracking-wider">
-              Silvia School Pipeline
+              Silvia Leads Pipeline
             </span>
           </div>
 
@@ -2207,13 +2210,13 @@ export default function LeadGenWorkspace() {
 
                       <div className="md:col-span-2">
                         <label className="block text-[9px] font-bold uppercase tracking-wider text-zinc-400 mb-1.5">
-                          School Type
+                          Category / Type
                         </label>
                         <input
                           type="text"
                           value={typeInput}
                           onChange={(e) => setTypeInput(e.target.value)}
-                          placeholder="e.g. matriculation schools"
+                          placeholder="e.g. schools, pharmacy, tea shop"
                           className={`w-full border rounded-xl px-3.5 py-2 text-xs focus:outline-none focus:border-[#00637C] focus:ring-1 focus:ring-[#00637C] font-semibold transition-all ${
                             isDarkMode
                               ? "bg-zinc-850 border-zinc-700 text-white"
@@ -2473,7 +2476,7 @@ export default function LeadGenWorkspace() {
                 >
                   <div>
                     <span className="text-[10px] text-zinc-400 font-bold uppercase tracking-wider block">
-                      Total Schools
+                      Total Leads
                     </span>
                     <span className="text-2xl font-black mt-1 block">
                       {totalLeads}
@@ -2933,6 +2936,7 @@ export default function LeadGenWorkspace() {
                 {(() => {
                   let score = 75;
                   if (selectedLead.appearance === "Fresh") score = 95;
+                  else if (selectedLead.appearance === "Directory") score = 92;
                   else if (selectedLead.appearance === "Redesign") score = 88;
                   else if (selectedLead.social_media === "Inactive") score = 60;
                   else score = 35;
@@ -3264,6 +3268,16 @@ export default function LeadGenWorkspace() {
                       recs.push(
                         "Set up introductory outreach email focused on digital visibility.",
                       );
+                    } else if (selectedLead.appearance === "Directory") {
+                      recs.push(
+                        "Propose transitioning from a shared directory profile to a standalone custom brand website.",
+                      );
+                      recs.push(
+                        "Highlight directory limits (ad-leakage to competitors, lack of individual SEO power).",
+                      );
+                      recs.push(
+                        "Draft cold outreach email focusing on absolute local branding and direct ownership.",
+                      );
                     } else if (selectedLead.appearance === "Redesign") {
                       recs.push(
                         "Audit mobile styling errors and load latency to present pitch deck.",
@@ -3325,7 +3339,7 @@ export default function LeadGenWorkspace() {
                     Add Manual Lead
                   </h3>
                   <p className="text-[10px] text-zinc-400 font-semibold mt-0.5">
-                    Manually register a target school in your CRM pipeline.
+                    Manually register a target lead in your CRM pipeline.
                   </p>
                 </div>
                 <button
@@ -3343,13 +3357,13 @@ export default function LeadGenWorkspace() {
               <form onSubmit={handleAddLeadSubmit} className="space-y-3.5">
                 <div>
                   <label className="block text-[9px] font-bold uppercase tracking-wider text-zinc-400 mb-1">
-                    School Name *
+                    Business Name *
                   </label>
                   <input
                     type="text"
                     value={newSchoolName}
                     onChange={(e) => setNewSchoolName(e.target.value)}
-                    placeholder="e.g. St. Mary Matriculation School"
+                    placeholder="e.g. Apollo Pharmacy or Starbucks"
                     className={`w-full border rounded-xl px-3.5 py-2 text-xs focus:outline-none focus:border-[#00637C] focus:ring-1 focus:ring-[#00637C] font-semibold transition-all ${
                       isDarkMode
                         ? "bg-zinc-850 border-zinc-700 text-white"
@@ -3362,23 +3376,19 @@ export default function LeadGenWorkspace() {
                 <div className="grid grid-cols-2 gap-3">
                   <div>
                     <label className="block text-[9px] font-bold uppercase tracking-wider text-zinc-400 mb-1">
-                      School Type
+                      Category / Type
                     </label>
-                    <select
+                    <input
+                      type="text"
                       value={newInstitutionType}
                       onChange={(e) => setNewInstitutionType(e.target.value)}
-                      className={`w-full border rounded-xl px-3.5 py-2 text-xs focus:outline-none focus:border-[#00637C] font-semibold transition-all ${
+                      placeholder="e.g. Pharmacy, CBSE, Tea Shop"
+                      className={`w-full border rounded-xl px-3.5 py-2 text-xs focus:outline-none focus:border-[#00637C] focus:ring-1 focus:ring-[#00637C] font-semibold transition-all ${
                         isDarkMode
                           ? "bg-zinc-850 border-zinc-700 text-white"
                           : "bg-[#F8FAFC] border-zinc-200 text-[#111827]"
                       }`}
-                    >
-                      <option value="Matriculation">Matriculation</option>
-                      <option value="CBSE">CBSE</option>
-                      <option value="International">International</option>
-                      <option value="State Board">State Board</option>
-                      <option value="Other">Other</option>
-                    </select>
+                    />
                   </div>
 
                   <div>
@@ -3438,7 +3448,7 @@ export default function LeadGenWorkspace() {
 
                 <div>
                   <label className="block text-[9px] font-bold uppercase tracking-wider text-zinc-400 mb-1">
-                    School Address
+                    Address
                   </label>
                   <textarea
                     value={newAddress}
