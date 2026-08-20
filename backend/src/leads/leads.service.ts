@@ -26,7 +26,7 @@ export class LeadsService {
     }
 
     if (search) {
-      // Return leads where school_name, area_name, search_area, address or remarks matches search
+      // Return leads where school_name, area_name, search_area, address, remarks or institution_type matches search
       return this.leadsRepository.find({
         where: [
           { ...where, school_name: Like(`%${search}%`) },
@@ -34,6 +34,7 @@ export class LeadsService {
           { ...where, search_area: Like(`%${search}%`) },
           { ...where, address: Like(`%${search}%`) },
           { ...where, remarks: Like(`%${search}%`) },
+          { ...where, institution_type: Like(`%${search}%`) },
         ],
         order: { batch_id: 'DESC', id: 'ASC' },
       });

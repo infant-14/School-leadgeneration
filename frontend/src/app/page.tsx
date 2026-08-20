@@ -270,7 +270,6 @@ export default function LeadGenWorkspace() {
 
   // Search / Filters
   const [searchTerm, setSearchTerm] = useState("");
-  const [filterType, setFilterType] = useState("All Types");
   const [filterStatus, setFilterStatus] = useState("All Stages");
   const [filterAtmosphere, setFilterAtmosphere] = useState("All Atmospheres");
   const [filterAppearance, setFilterAppearance] = useState("All Appearances");
@@ -296,7 +295,6 @@ export default function LeadGenWorkspace() {
     setCurrentPage(1);
   }, [
     searchTerm,
-    filterType,
     filterAppearance,
     filterAtmosphere,
     filterPincode,
@@ -408,7 +406,8 @@ export default function LeadGenWorkspace() {
     process.env.NEXT_PUBLIC_API_BASE ||
     "http://localhost:8080/api";
   // const API_BASE =
-  //   process.env.NEXT_PUBLIC_API_BASE || "https://jlglzg4d-8080.inc1.devtunnels.ms/api";
+  //   process.env.NEXT_PUBLIC_API_BASE ||
+  //   "https://28j0qmws-8080.inc1.devtunnels.ms/api";
 
   // Fetch leads on mount and whenever tab changes
   useEffect(() => {
@@ -1100,10 +1099,9 @@ export default function LeadGenWorkspace() {
       (lead.address &&
         lead.address.toLowerCase().includes(searchTerm.toLowerCase())) ||
       (lead.remarks &&
-        lead.remarks.toLowerCase().includes(searchTerm.toLowerCase()));
-
-    const matchesType =
-      filterType === "All Types" || lead.institution_type === filterType;
+        lead.remarks.toLowerCase().includes(searchTerm.toLowerCase())) ||
+      (lead.institution_type &&
+        lead.institution_type.toLowerCase().includes(searchTerm.toLowerCase()));
 
     const matchesStatus =
       filterStatus === "All Stages" || lead.status === filterStatus;
@@ -1121,7 +1119,6 @@ export default function LeadGenWorkspace() {
 
     return (
       matchesSearch &&
-      matchesType &&
       matchesStatus &&
       matchesAtmosphere &&
       matchesAppearance &&
@@ -2567,13 +2564,13 @@ export default function LeadGenWorkspace() {
                           {/* Left Side: Filter Controls */}
                           <div className="flex items-center gap-1.5 shrink-0">
                             {/* Search Input */}
-                            <div className="relative w-32 md:w-36 shrink-0">
+                            <div className="relative w-48 md:w-56 shrink-0">
                               <Search className="absolute left-2.5 top-2.5 h-3.5 w-3.5 text-zinc-400" />
                               <input
                                 type="text"
                                 value={searchTerm}
                                 onChange={(e) => setSearchTerm(e.target.value)}
-                                placeholder="Search name or location..."
+                                placeholder="Search category/place..."
                                 className={`w-full pl-8 pr-3 py-1.5 border rounded-lg text-[10px] focus:outline-none focus:border-[#00637C] font-semibold transition-all ${
                                   isDarkMode
                                     ? "bg-zinc-850 border-zinc-700 text-white"
@@ -2581,25 +2578,6 @@ export default function LeadGenWorkspace() {
                                 }`}
                               />
                             </div>
-
-                            {/* Dropdowns */}
-                            <CustomSelect
-                              value={filterType}
-                              onChange={setFilterType}
-                              options={[
-                                { label: "All Types", value: "All Types" },
-                                { label: "CBSE", value: "CBSE" },
-                                {
-                                  label: "Matriculation",
-                                  value: "Matriculation",
-                                },
-                                {
-                                  label: "International",
-                                  value: "International",
-                                },
-                              ]}
-                              isDarkMode={isDarkMode}
-                            />
 
                             <CustomSelect
                               value={filterAppearance}
