@@ -31,6 +31,7 @@ import {
   Database,
   Globe,
   Check,
+  Eye,
 } from "lucide-react";
 import {
   ResponsiveContainer,
@@ -311,6 +312,46 @@ export default function LeadGenWorkspace() {
   const [filterAtmosphere, setFilterAtmosphere] = useState("All Atmospheres");
   const [filterAppearance, setFilterAppearance] = useState("All Appearances");
   const [filterPincode, setFilterPincode] = useState("All Pincodes");
+
+  // Dynamic Columns Visibility State
+  const [visibleColumns, setVisibleColumns] = useState({
+    customerName: false,
+    categoryType: false,
+    socialMedia: false,
+    areaName: false,
+    atmosphere: false,
+    address: false,
+    pincode: false,
+    stage: false,
+  });
+  const [isColumnsDropdownOpen, setIsColumnsDropdownOpen] = useState(false);
+  const columnsDropdownRef = useRef<HTMLDivElement>(null);
+  
+  const optionalColumnsList = [
+    { key: "customerName", label: "Customer Name" },
+    { key: "categoryType", label: "Category / Type" },
+    { key: "socialMedia", label: "Social Media" },
+    { key: "areaName", label: "Area Name" },
+    { key: "atmosphere", label: "Institution Atmosphere" },
+    { key: "address", label: "Address" },
+    { key: "pincode", label: "Pincode" },
+    { key: "stage", label: "Stage" },
+  ];
+
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (
+        columnsDropdownRef.current &&
+        !columnsDropdownRef.current.contains(event.target as Node)
+      ) {
+        setIsColumnsDropdownOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, []);
 
   // Scraper inputs
   const [areaInput, setAreaInput] = useState("");
@@ -1205,285 +1246,331 @@ export default function LeadGenWorkspace() {
               : "border-[#E2E8F0] bg-white"
           }`}
         >
-          <table className="w-full min-w-max text-left text-xs border-collapse">
-            <thead>
-              <tr
-                className={`text-[11px] font-bold border-b select-none ${
-                  isDarkMode
-                    ? "bg-zinc-850 text-zinc-300 border-zinc-800"
-                    : "bg-zinc-50 text-zinc-500 border-[#E2E8F0]"
-                }`}
-              >
-                <th
-                  className={`sticky top-0 z-10 p-3 text-center border-b border-r w-12 ${isDarkMode ? "bg-zinc-850 border-zinc-800 text-zinc-300" : "bg-zinc-50 border-[#E2E8F0] text-zinc-500"}`}
-                >
-                  S.No.
-                </th>
-                <th
-                  className={`sticky top-0 z-10 p-3 border-b border-r min-w-[150px] ${isDarkMode ? "bg-zinc-850 border-zinc-800 text-zinc-300" : "bg-zinc-50 border-[#E2E8F0] text-zinc-500"}`}
-                >
-                  Business Name
-                </th>
-                <th
-                  className={`sticky top-0 z-10 p-3 border-b border-r min-w-[120px] ${isDarkMode ? "bg-zinc-850 border-zinc-800 text-zinc-300" : "bg-zinc-50 border-[#E2E8F0] text-zinc-500"}`}
-                >
-                  Customer Name
-                </th>
-                <th
-                  className={`sticky top-0 z-10 p-3 text-center border-b border-r min-w-[120px] ${isDarkMode ? "bg-zinc-850 border-zinc-800 text-zinc-300" : "bg-zinc-50 border-[#E2E8F0] text-zinc-500"}`}
-                >
-                  Category / Type
-                </th>
-                <th
-                  className={`sticky top-0 z-10 p-3 text-center border-b border-r min-w-[100px] ${isDarkMode ? "bg-zinc-850 border-zinc-800 text-zinc-300" : "bg-zinc-50 border-[#E2E8F0] text-zinc-500"}`}
-                >
-                  Social Media
-                </th>
-                <th
-                  className={`sticky top-0 z-10 p-3 border-b border-r min-w-[100px] ${isDarkMode ? "bg-zinc-850 border-zinc-800 text-zinc-300" : "bg-zinc-50 border-[#E2E8F0] text-zinc-500"}`}
-                >
-                  Area Name
-                </th>
-                <th
-                  className={`sticky top-0 z-10 p-3 text-center border-b border-r min-w-[140px] ${isDarkMode ? "bg-zinc-850 border-zinc-800 text-zinc-300" : "bg-zinc-50 border-[#E2E8F0] text-zinc-500"}`}
-                >
-                  Institution Atmosphere
-                </th>
-                <th
-                  className={`sticky top-0 z-10 p-3 border-b border-r min-w-[150px] ${isDarkMode ? "bg-zinc-850 border-zinc-800 text-zinc-300" : "bg-zinc-50 border-[#E2E8F0] text-zinc-500"}`}
-                >
-                  Website URL
-                </th>
-                <th
-                  className={`sticky top-0 z-10 p-3 border-b border-r min-w-[110px] ${isDarkMode ? "bg-zinc-850 border-zinc-800 text-zinc-300" : "bg-zinc-50 border-[#E2E8F0] text-zinc-500"}`}
-                >
-                  Contact Number
-                </th>
-                <th
-                  className={`sticky top-0 z-10 p-3 border-b border-r min-w-[200px] ${isDarkMode ? "bg-zinc-850 border-zinc-800 text-zinc-300" : "bg-zinc-50 border-[#E2E8F0] text-zinc-500"}`}
-                >
-                  Address
-                </th>
-                <th
-                  className={`sticky top-0 z-10 p-3 border-b border-r min-w-[100px] ${isDarkMode ? "bg-zinc-850 border-zinc-800 text-zinc-300" : "bg-zinc-50 border-[#E2E8F0] text-zinc-500"}`}
-                >
-                  Pincode
-                </th>
-                <th
-                  className={`sticky top-0 z-10 p-3 text-center border-b border-r min-w-[100px] ${isDarkMode ? "bg-zinc-850 border-zinc-800 text-zinc-300" : "bg-zinc-50 border-[#E2E8F0] text-zinc-500"}`}
-                >
-                  Appearance
-                </th>
+          {(() => {
+            const dynamicColSpan = 6 + 
+              (visibleColumns.customerName ? 1 : 0) +
+              (visibleColumns.categoryType ? 1 : 0) +
+              (visibleColumns.socialMedia ? 1 : 0) +
+              (visibleColumns.areaName ? 1 : 0) +
+              (visibleColumns.atmosphere ? 1 : 0) +
+              (visibleColumns.address ? 1 : 0) +
+              (visibleColumns.pincode ? 1 : 0) +
+              ((showActions && visibleColumns.stage) ? 1 : 0) +
+              (showActions ? 1 : 0);
 
-                <th
-                  className={`sticky top-0 z-10 p-3 border-b min-w-[200px] ${
-                    showActions ? "border-r" : ""
-                  } ${isDarkMode ? "bg-zinc-850 border-zinc-800 text-zinc-300" : "bg-zinc-50 border-[#E2E8F0] text-zinc-500"}`}
-                >
-                  Remarks
-                </th>
-                {showActions && (
-                  <>
-                    <th
-                      className={`sticky top-0 z-10 p-3 text-center border-b border-r min-w-[125px] ${isDarkMode ? "bg-zinc-850 border-zinc-800 text-zinc-300" : "bg-zinc-50 border-[#E2E8F0] text-zinc-500"}`}
-                    >
-                      Stage
-                    </th>
-                    <th
-                      className={`sticky top-0 z-10 p-3 text-center border-b min-w-[80px] ${isDarkMode ? "bg-zinc-850 border-zinc-800 text-zinc-300" : "bg-zinc-50 border-[#E2E8F0] text-zinc-500"}`}
-                    >
-                      Action
-                    </th>
-                  </>
-                )}
-              </tr>
-            </thead>
-            <tbody
-              className={`divide-y ${isDarkMode ? "divide-zinc-800" : "divide-[#E2E8F0]"}`}
-            >
-              {leadsList.length === 0 ? (
-                <tr>
-                  <td
-                    colSpan={showActions ? 15 : 13}
-                    className="p-8 text-center text-zinc-400 font-bold"
-                  >
-                    No matching leads found.
-                  </td>
-                </tr>
-              ) : (
-                leadsList.map((lead, idx) => (
+            return (
+              <table className="w-full min-w-max text-left text-xs border-collapse">
+                <thead>
                   <tr
-                    key={lead.id}
-                    onClick={() => setSelectedLead(lead)}
-                    className={`transition-all text-[11px] font-semibold cursor-pointer border-b ${
-                      selectedLead?.id === lead.id
-                        ? isDarkMode
-                          ? "bg-[#00637C]/20 text-[#00637C] border-b border-[#00637C]"
-                          : "bg-[#e0f2f6] text-[#00637C] border-b border-[#00637C]"
-                        : isDarkMode
-                          ? "bg-zinc-900 hover:bg-zinc-850 text-zinc-200"
-                          : "bg-white hover:bg-zinc-50/80 text-zinc-855"
+                    className={`text-[11px] font-bold border-b select-none ${
+                      isDarkMode
+                        ? "bg-zinc-850 text-zinc-300 border-zinc-800"
+                        : "bg-zinc-50 text-zinc-500 border-[#E2E8F0]"
                     }`}
                   >
-                    <td
-                      className={`p-3 text-center border-r font-bold text-zinc-400 ${isDarkMode ? "border-zinc-800" : "border-[#E2E8F0]"}`}
+                    <th
+                      className={`sticky top-0 z-10 p-3 text-center border-b border-r w-12 ${isDarkMode ? "bg-zinc-850 border-zinc-800 text-zinc-300" : "bg-zinc-50 border-[#E2E8F0] text-zinc-500"}`}
                     >
-                      {(currentPage - 1) * pageSize + idx + 1}
-                    </td>
-                    <td
-                      className={`p-3 border-r font-extrabold ${isDarkMode ? "text-white border-zinc-800" : "text-zinc-900 border-[#E2E8F0]"}`}
+                      S.No.
+                    </th>
+                    <th
+                      className={`sticky top-0 z-10 p-3 border-b border-r min-w-[150px] ${isDarkMode ? "bg-zinc-850 border-zinc-800 text-zinc-300" : "bg-zinc-50 border-[#E2E8F0] text-zinc-500"}`}
                     >
-                      {lead.school_name}
-                    </td>
-                    <td
-                      className={`p-3 border-r text-zinc-400 ${isDarkMode ? "border-zinc-800" : "border-[#E2E8F0]"}`}
-                    >
-                      Not necessary
-                    </td>
-                    <td
-                      className={`p-3 text-center border-r ${isDarkMode ? "border-zinc-800" : "border-[#E2E8F0]"}`}
-                    >
-                      <span
-                        className={`font-extrabold px-2 py-0.5 rounded text-[10px] ${
-                          isDarkMode
-                            ? "bg-zinc-800 text-zinc-300 border border-zinc-700"
-                            : "bg-zinc-100 text-zinc-600 border border-zinc-200/60"
-                        }`}
+                      Business Name
+                    </th>
+                    {visibleColumns.customerName && (
+                      <th
+                        className={`sticky top-0 z-10 p-3 border-b border-r min-w-[120px] ${isDarkMode ? "bg-zinc-850 border-zinc-800 text-zinc-300" : "bg-zinc-50 border-[#E2E8F0] text-zinc-500"}`}
                       >
-                        {lead.institution_type || "Matriculation"}
-                      </span>
-                    </td>
-                    <td
-                      className={`p-3 text-center border-r ${isDarkMode ? "border-zinc-800" : "border-[#E2E8F0]"}`}
-                    >
-                      <span
-                        className={`inline-block font-extrabold px-2.5 py-0.5 rounded text-[10px] ${
-                          lead.social_media === "Active"
-                            ? "bg-emerald-50 text-emerald-700 border border-emerald-200/50"
-                            : "bg-rose-50 text-rose-700 border border-rose-200/50"
-                        }`}
+                        Customer Name
+                      </th>
+                    )}
+                    {visibleColumns.categoryType && (
+                      <th
+                        className={`sticky top-0 z-10 p-3 text-center border-b border-r min-w-[120px] ${isDarkMode ? "bg-zinc-850 border-zinc-800 text-zinc-300" : "bg-zinc-50 border-[#E2E8F0] text-zinc-500"}`}
                       >
-                        {lead.social_media || "Inactive"}
-                      </span>
-                    </td>
-                    <td
-                      className={`p-3 border-r ${isDarkMode ? "border-zinc-800" : "border-[#E2E8F0]"}`}
-                    >
-                      {lead.area_name}
-                    </td>
-                    <td
-                      className={`p-3 text-center border-r ${isDarkMode ? "border-zinc-800" : "border-[#E2E8F0]"}`}
-                    >
-                      <span
-                        className={`inline-block font-extrabold px-2.5 py-0.5 rounded text-[10px] ${
-                          lead.atmosphere === "Good"
-                            ? "bg-emerald-50 text-emerald-700 border border-emerald-200/50"
-                            : "bg-rose-50 text-rose-700 border border-rose-200/50"
-                        }`}
+                        Category / Type
+                      </th>
+                    )}
+                    {visibleColumns.socialMedia && (
+                      <th
+                        className={`sticky top-0 z-10 p-3 text-center border-b border-r min-w-[100px] ${isDarkMode ? "bg-zinc-850 border-zinc-800 text-zinc-300" : "bg-zinc-50 border-[#E2E8F0] text-zinc-500"}`}
                       >
-                        {lead.atmosphere || "Good"}
-                      </span>
-                    </td>
-                    <td
-                      className={`p-3 border-r ${isDarkMode ? "border-zinc-800" : "border-[#E2E8F0]"}`}
-                    >
-                      {lead.website_url ? (
-                        <a
-                          href={lead.website_url}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          onClick={(e) => e.stopPropagation()}
-                          className="text-[#00637C] underline hover:text-[#004d60] font-bold break-all"
-                        >
-                          {lead.website_url}
-                        </a>
-                      ) : (
-                        <span className="text-red-500 font-bold">None</span>
-                      )}
-                    </td>
-                    <td
-                      className={`p-3 border-r font-mono font-bold ${isDarkMode ? "border-zinc-800" : "border-[#E2E8F0]"}`}
-                    >
-                      {lead.appearance === "Directory" ? "Directory" : cleanPhoneString(lead.contact_number)}
-                    </td>
-                    <td
-                      className={`p-3 border-r text-zinc-500 font-semibold break-words max-w-[250px] ${isDarkMode ? "border-zinc-800" : "border-[#E2E8F0]"}`}
-                    >
-                      {lead.address || "N/A"}
-                    </td>
-                    <td
-                      className={`p-3 border-r font-mono text-zinc-500 font-bold ${isDarkMode ? "border-zinc-800" : "border-[#E2E8F0]"}`}
-                    >
-                      {lead.pincode || "N/A"}
-                    </td>
-                    <td
-                      className={`p-3 text-center border-r ${isDarkMode ? "border-zinc-800" : "border-[#E2E8F0]"}`}
-                    >
-                      <span
-                        className={`inline-block font-extrabold px-2.5 py-0.5 rounded text-[10px] ${
-                          lead.appearance === "Redesign"
-                            ? "bg-amber-50 text-amber-700 border border-amber-200/50"
-                            : lead.appearance === "Directory"
-                              ? "bg-purple-50 text-purple-700 border border-purple-200/50"
-                              : lead.appearance === "Fresh"
-                                ? "bg-blue-50 text-blue-700 border border-blue-200/50"
-                                : "bg-emerald-50 text-emerald-700 border border-emerald-200/50"
-                        }`}
+                        Social Media
+                      </th>
+                    )}
+                    {visibleColumns.areaName && (
+                      <th
+                        className={`sticky top-0 z-10 p-3 border-b border-r min-w-[100px] ${isDarkMode ? "bg-zinc-850 border-zinc-800 text-zinc-300" : "bg-zinc-50 border-[#E2E8F0] text-zinc-500"}`}
                       >
-                        {lead.appearance || "Redesign"}
-                      </span>
-                    </td>
-                    <td
-                      className={`p-3 leading-relaxed break-words whitespace-pre-line ${showActions ? `border-r ${isDarkMode ? "border-zinc-800" : "border-[#E2E8F0]"}` : ""}`}
+                        Area Name
+                      </th>
+                    )}
+                    {visibleColumns.atmosphere && (
+                      <th
+                        className={`sticky top-0 z-10 p-3 text-center border-b border-r min-w-[140px] ${isDarkMode ? "bg-zinc-850 border-zinc-800 text-zinc-300" : "bg-zinc-50 border-[#E2E8F0] text-zinc-500"}`}
+                      >
+                        Institution Atmosphere
+                      </th>
+                    )}
+                    <th
+                      className={`sticky top-0 z-10 p-3 border-b border-r min-w-[150px] ${isDarkMode ? "bg-zinc-850 border-zinc-800 text-zinc-300" : "bg-zinc-50 border-[#E2E8F0] text-zinc-500"}`}
                     >
-                      {lead.remarks || "N/A"}
-                    </td>
+                      Website URL
+                    </th>
+                    <th
+                      className={`sticky top-0 z-10 p-3 border-b border-r min-w-[110px] ${isDarkMode ? "bg-zinc-850 border-zinc-800 text-zinc-300" : "bg-zinc-50 border-[#E2E8F0] text-zinc-500"}`}
+                    >
+                      Contact Number
+                    </th>
+                    {visibleColumns.address && (
+                      <th
+                        className={`sticky top-0 z-10 p-3 border-b border-r min-w-[200px] ${isDarkMode ? "bg-zinc-850 border-zinc-800 text-zinc-300" : "bg-zinc-50 border-[#E2E8F0] text-zinc-500"}`}
+                      >
+                        Address
+                      </th>
+                    )}
+                    {visibleColumns.pincode && (
+                      <th
+                        className={`sticky top-0 z-10 p-3 border-b border-r min-w-[100px] ${isDarkMode ? "bg-zinc-850 border-zinc-800 text-zinc-300" : "bg-zinc-50 border-[#E2E8F0] text-zinc-500"}`}
+                      >
+                        Pincode
+                      </th>
+                    )}
+                    <th
+                      className={`sticky top-0 z-10 p-3 text-center border-b border-r min-w-[100px] ${isDarkMode ? "bg-zinc-850 border-zinc-800 text-zinc-300" : "bg-zinc-50 border-[#E2E8F0] text-zinc-500"}`}
+                    >
+                      Appearance
+                    </th>
+                    <th
+                      className={`sticky top-0 z-10 p-3 border-b min-w-[200px] ${
+                        showActions ? "border-r" : ""
+                      } ${isDarkMode ? "bg-zinc-850 border-zinc-800 text-zinc-300" : "bg-zinc-50 border-[#E2E8F0] text-zinc-500"}`}
+                    >
+                      Remarks
+                    </th>
                     {showActions && (
                       <>
-                        <td
-                          className={`p-3 text-center border-r ${isDarkMode ? "border-zinc-800" : "border-[#E2E8F0]"}`}
+                        {visibleColumns.stage && (
+                          <th
+                            className={`sticky top-0 z-10 p-3 text-center border-b border-r min-w-[125px] ${isDarkMode ? "bg-zinc-850 border-zinc-800 text-zinc-300" : "bg-zinc-50 border-[#E2E8F0] text-zinc-500"}`}
+                          >
+                            Stage
+                          </th>
+                        )}
+                        <th
+                          className={`sticky top-0 z-10 p-3 text-center border-b min-w-[80px] ${isDarkMode ? "bg-zinc-850 border-zinc-800 text-zinc-300" : "bg-zinc-50 border-[#E2E8F0] text-zinc-500"}`}
                         >
-                          <select
-                            value={lead.status}
-                            onClick={(e) => e.stopPropagation()}
-                            onChange={(e) => {
-                              e.stopPropagation();
-                              handleUpdateStatus(lead.id, e.target.value);
-                            }}
-                            className={`border rounded px-2 py-1 font-bold text-[9px] uppercase focus:outline-none ${
-                              isDarkMode
-                                ? "bg-zinc-850 border-zinc-700 text-zinc-300"
-                                : "bg-white border-[#E2E8F0] text-zinc-500"
-                            }`}
-                          >
-                            <option value="New Lead">New Lead</option>
-                            <option value="Qualified">Qualified</option>
-                            <option value="Email Sent">Email Sent</option>
-                            <option value="Replied">Replied</option>
-                            <option value="Meeting Booked">
-                              Meeting Booked
-                            </option>
-                          </select>
-                        </td>
-                        <td className="p-3 text-center">
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleDeleteLead(lead.id);
-                            }}
-                            className="p-1.5 rounded-lg border border-red-500/10 hover:bg-red-50 text-red-500 transition-all"
-                            title="Delete Lead"
-                          >
-                            <Trash2 className="h-3.5 w-3.5" />
-                          </button>
-                        </td>
+                          Action
+                        </th>
                       </>
                     )}
                   </tr>
-                ))
-              )}
-            </tbody>
-          </table>
+                </thead>
+                <tbody
+                  className={`divide-y ${isDarkMode ? "divide-zinc-800" : "divide-[#E2E8F0]"}`}
+                >
+                  {leadsList.length === 0 ? (
+                    <tr>
+                      <td
+                        colSpan={dynamicColSpan}
+                        className="p-8 text-center text-zinc-400 font-bold"
+                      >
+                        No matching leads found.
+                      </td>
+                    </tr>
+                  ) : (
+                    leadsList.map((lead, idx) => (
+                      <tr
+                        key={lead.id}
+                        onClick={() => setSelectedLead(lead)}
+                        className={`transition-all text-[11px] font-semibold cursor-pointer border-b ${
+                          selectedLead?.id === lead.id
+                            ? isDarkMode
+                              ? "bg-[#00637C]/20 text-[#00637C] border-b border-[#00637C]"
+                              : "bg-[#e0f2f6] text-[#00637C] border-b border-[#00637C]"
+                            : isDarkMode
+                              ? "bg-zinc-900 hover:bg-zinc-850 text-zinc-200"
+                              : "bg-white hover:bg-zinc-50/80 text-zinc-855"
+                        }`}
+                      >
+                        <td
+                          className={`p-3 text-center border-r font-bold text-zinc-400 ${isDarkMode ? "border-zinc-800" : "border-[#E2E8F0]"}`}
+                        >
+                          {(currentPage - 1) * pageSize + idx + 1}
+                        </td>
+                        <td
+                          className={`p-3 border-r font-extrabold ${isDarkMode ? "text-white border-zinc-800" : "text-zinc-900 border-[#E2E8F0]"}`}
+                        >
+                          {lead.school_name}
+                        </td>
+                        {visibleColumns.customerName && (
+                          <td
+                            className={`p-3 border-r text-zinc-400 ${isDarkMode ? "border-zinc-800" : "border-[#E2E8F0]"}`}
+                          >
+                            Not necessary
+                          </td>
+                        )}
+                        {visibleColumns.categoryType && (
+                          <td
+                            className={`p-3 text-center border-r ${isDarkMode ? "border-zinc-800" : "border-[#E2E8F0]"}`}
+                          >
+                            <span
+                              className={`font-extrabold px-2 py-0.5 rounded text-[10px] ${
+                                isDarkMode
+                                  ? "bg-zinc-850 border-zinc-700 text-zinc-300 border border-zinc-800"
+                                  : "bg-zinc-100 text-zinc-600 border border-zinc-200/60"
+                              }`}
+                            >
+                              {lead.institution_type || "Matriculation"}
+                            </span>
+                          </td>
+                        )}
+                        {visibleColumns.socialMedia && (
+                          <td
+                            className={`p-3 text-center border-r ${isDarkMode ? "border-zinc-800" : "border-[#E2E8F0]"}`}
+                          >
+                            <span
+                              className={`inline-block font-extrabold px-2.5 py-0.5 rounded text-[10px] ${
+                                lead.social_media === "Active"
+                                  ? "bg-emerald-50 text-emerald-700 border border-emerald-200/50"
+                                  : "bg-rose-50 text-rose-700 border border-rose-200/50"
+                              }`}
+                            >
+                              {lead.social_media || "Inactive"}
+                            </span>
+                          </td>
+                        )}
+                        {visibleColumns.areaName && (
+                          <td
+                            className={`p-3 border-r ${isDarkMode ? "border-zinc-800" : "border-[#E2E8F0]"}`}
+                          >
+                            {lead.area_name}
+                          </td>
+                        )}
+                        {visibleColumns.atmosphere && (
+                          <td
+                            className={`p-3 text-center border-r ${isDarkMode ? "border-zinc-800" : "border-[#E2E8F0]"}`}
+                          >
+                            <span
+                              className={`inline-block font-extrabold px-2.5 py-0.5 rounded text-[10px] ${
+                                lead.atmosphere === "Good"
+                                  ? "bg-emerald-50 text-emerald-700 border border-emerald-200/50"
+                                  : "bg-rose-50 text-rose-700 border border-rose-200/50"
+                              }`}
+                            >
+                              {lead.atmosphere || "Good"}
+                            </span>
+                          </td>
+                        )}
+                        <td
+                          className={`p-3 border-r ${isDarkMode ? "border-zinc-800" : "border-[#E2E8F0]"}`}
+                        >
+                          {lead.website_url ? (
+                            <a
+                              href={lead.website_url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              onClick={(e) => e.stopPropagation()}
+                              className="text-[#00637C] underline hover:text-[#004d60] font-bold break-all"
+                            >
+                              {lead.website_url}
+                            </a>
+                          ) : (
+                            <span className="text-red-500 font-bold">None</span>
+                          )}
+                        </td>
+                        <td
+                          className={`p-3 border-r font-mono font-bold ${isDarkMode ? "border-zinc-800" : "border-[#E2E8F0]"}`}
+                        >
+                          {lead.appearance === "Directory" ? "Directory" : cleanPhoneString(lead.contact_number)}
+                        </td>
+                        {visibleColumns.address && (
+                          <td
+                            className={`p-3 border-r text-zinc-500 font-semibold break-words max-w-[250px] ${isDarkMode ? "border-zinc-800" : "border-[#E2E8F0]"}`}
+                          >
+                            {lead.address || "N/A"}
+                          </td>
+                        )}
+                        {visibleColumns.pincode && (
+                          <td
+                            className={`p-3 border-r font-mono text-zinc-500 font-bold ${isDarkMode ? "border-zinc-800" : "border-[#E2E8F0]"}`}
+                          >
+                            {lead.pincode || "N/A"}
+                          </td>
+                        )}
+                        <td
+                          className={`p-3 text-center border-r ${isDarkMode ? "border-zinc-800" : "border-[#E2E8F0]"}`}
+                        >
+                          <span
+                            className={`inline-block font-extrabold px-2.5 py-0.5 rounded text-[10px] ${
+                              lead.appearance === "Redesign"
+                                ? "bg-amber-50 text-amber-700 border border-amber-200/50"
+                                : lead.appearance === "Directory"
+                                  ? "bg-purple-50 text-purple-700 border border-purple-200/50"
+                                  : lead.appearance === "Fresh"
+                                    ? "bg-blue-50 text-blue-700 border border-blue-200/50"
+                                    : "bg-emerald-50 text-emerald-700 border border-emerald-200/50"
+                            }`}
+                          >
+                            {lead.appearance || "Redesign"}
+                          </span>
+                        </td>
+                        <td
+                          className={`p-3 leading-relaxed break-words whitespace-pre-line ${showActions ? `border-r ${isDarkMode ? "border-zinc-800" : "border-[#E2E8F0]"}` : ""}`}
+                        >
+                          {lead.remarks || "N/A"}
+                        </td>
+                        {showActions && (
+                          <>
+                            {visibleColumns.stage && (
+                              <td
+                                className={`p-3 text-center border-r ${isDarkMode ? "border-zinc-800" : "border-[#E2E8F0]"}`}
+                              >
+                                <select
+                                  value={lead.status}
+                                  onClick={(e) => e.stopPropagation()}
+                                  onChange={(e) => {
+                                    e.stopPropagation();
+                                    handleUpdateStatus(lead.id, e.target.value);
+                                  }}
+                                  className={`border rounded px-2 py-1 font-bold text-[9px] uppercase focus:outline-none ${
+                                    isDarkMode
+                                      ? "bg-zinc-850 border-zinc-700 text-zinc-300"
+                                      : "bg-white border-[#E2E8F0] text-zinc-500"
+                                  }`}
+                                >
+                                  <option value="New Lead">New Lead</option>
+                                  <option value="Qualified">Qualified</option>
+                                  <option value="Email Sent">Email Sent</option>
+                                  <option value="Replied">Replied</option>
+                                  <option value="Meeting Booked">
+                                    Meeting Booked
+                                  </option>
+                                </select>
+                              </td>
+                            )}
+                            <td className="p-3 text-center">
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleDeleteLead(lead.id);
+                                }}
+                                className="p-1.5 rounded-lg border border-red-500/10 hover:bg-red-50 text-red-500 transition-all"
+                                title="Delete Lead"
+                              >
+                                <Trash2 className="h-3.5 w-3.5" />
+                              </button>
+                            </td>
+                          </>
+                        )}
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            );
+          })()}
         </div>
       </div>
     );
@@ -2588,106 +2675,162 @@ export default function LeadGenWorkspace() {
                     className={`border rounded-xl p-5 shadow-sm space-y-4 overflow-hidden ${isDarkMode ? "bg-zinc-900 border-zinc-800 text-white" : "bg-white border-[#E2E8F0] text-[#111827]"}`}
                   >
                     <div className="flex flex-col pb-3 border-b border-[#E2E8F0] dark:border-zinc-800 gap-3 w-full">
-                      <div>
-                        <h3 className="text-xs font-black uppercase tracking-wider text-[#00637C]">
-                          Discovered Database Leads ({filteredLeads.length})
-                        </h3>
-                        <p className="text-[10px] text-zinc-400 mt-0.5 font-medium">
-                          Click any row below to open the rich AI Analysis and
-                          website preview panel.
-                        </p>
-                      </div>
+                      {/* Title & Action Buttons Row */}
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 w-full">
+                        <div>
+                          <h3 className="text-xs font-black uppercase tracking-wider text-[#00637C]">
+                            Discovered Database Leads ({filteredLeads.length})
+                          </h3>
+                          <p className="text-[10px] text-zinc-400 mt-0.5 font-medium">
+                            Click any row below to open the rich AI Analysis and
+                            website preview panel.
+                          </p>
+                        </div>
 
-                      {/* Integrated Filters & Sync Panel inside Card Header */}
-                      <div className="w-full overflow-x-auto pb-48 -mb-48 no-scrollbar scroll-smooth">
-                        <div className="flex items-center justify-between gap-4 min-w-max w-full">
-                          {/* Left Side: Filter Controls */}
-                          <div className="flex items-center gap-1.5 shrink-0">
-                            {/* Search Input */}
-                            <div className="relative w-48 md:w-56 shrink-0">
-                              <Search className="absolute left-2.5 top-2.5 h-3.5 w-3.5 text-zinc-400" />
-                              <input
-                                type="text"
-                                value={searchTerm}
-                                onChange={(e) => setSearchTerm(e.target.value)}
-                                placeholder="Search category/place..."
-                                className={`w-full pl-8 pr-3 py-1.5 border rounded-lg text-[10px] focus:outline-none focus:border-[#00637C] font-semibold transition-all ${
-                                  isDarkMode
-                                    ? "bg-zinc-850 border-zinc-700 text-white"
-                                    : "bg-[#F5F7FA] border-zinc-200 text-[#111827]"
-                                }`}
-                              />
-                            </div>
-
-                            <CustomSelect
-                              value={filterAppearance}
-                              onChange={setFilterAppearance}
-                              options={[
-                                {
-                                  label: "All Appearances",
-                                  value: "All Appearances",
-                                },
-                                { label: "Good Site", value: "Good" },
-                                { label: "Redesign Site", value: "Redesign" },
-                                { label: "No Site", value: "Fresh" },
-                              ]}
-                              isDarkMode={isDarkMode}
-                            />
-
-                            <CustomSelect
-                              value={filterAtmosphere}
-                              onChange={setFilterAtmosphere}
-                              options={[
-                                {
-                                  label: "All Atmospheres",
-                                  value: "All Atmospheres",
-                                },
-                                { label: "Atmosphere: Good", value: "Good" },
-                                { label: "Atmosphere: Bad", value: "Bad" },
-                              ]}
-                              isDarkMode={isDarkMode}
-                            />
-
-                            <CustomSelect
-                              value={filterPincode}
-                              onChange={setFilterPincode}
-                              options={pincodeOptions}
-                              isDarkMode={isDarkMode}
-                            />
-                          </div>
-
-                          {/* Right Side: Action Buttons */}
-                          <div className="flex items-center gap-1.5 shrink-0">
+                        {/* Action Buttons (Right Side) */}
+                        <div className="flex items-center gap-1.5 shrink-0 flex-wrap">
+                          <div className="relative" ref={columnsDropdownRef}>
                             <button
-                              onClick={handleSyncSheets}
-                              className="bg-[#00637C] hover:bg-[#004d60] text-white px-2 py-1.5 rounded-lg text-[10px] font-bold transition-all flex items-center gap-1 shadow-sm shrink-0 border border-[#00637C]"
-                            >
-                              <RefreshCw className="h-3 w-3" /> Sync Sheets
-                            </button>
-
-                            <button
-                              onClick={handleDownloadCSV}
+                              onClick={() => setIsColumnsDropdownOpen(!isColumnsDropdownOpen)}
                               className={`px-2 py-1.5 rounded-lg text-[10px] font-bold transition-all flex items-center gap-1 shadow-sm shrink-0 border ${
                                 isDarkMode
                                   ? "bg-zinc-850 border-zinc-700 text-zinc-200 hover:bg-zinc-700"
-                                  : "bg-[#e0f2f6] border-[#00637C]/20 text-[#00637C] hover:bg-[#cbeaf0]"
+                                  : "bg-white border-zinc-200 text-zinc-700 hover:bg-zinc-50"
                               }`}
                             >
-                              <Download className="h-3 w-3" /> Download CSV
+                              <Eye className="h-3 w-3" /> Columns ▾
                             </button>
-
-                            <button
-                              onClick={handleDeleteAllLeads}
-                              disabled={leads.length === 0}
-                              className={`px-2 py-1.5 rounded-lg text-[10px] font-bold transition-all flex items-center gap-1 shadow-sm shrink-0 border disabled:opacity-50 disabled:cursor-not-allowed ${
-                                isDarkMode
-                                  ? "bg-red-950/20 border-red-500/30 text-red-400 hover:bg-red-950/40 hover:text-red-300"
-                                  : "bg-red-50 border-red-200 text-red-600 hover:bg-red-100 hover:text-red-700"
-                              }`}
-                            >
-                              <Trash2 className="h-3 w-3" /> Delete All
-                            </button>
+                            {isColumnsDropdownOpen && (
+                              <div
+                                className={`absolute left-0 sm:right-0 sm:left-auto z-50 mt-1.5 w-48 rounded-lg shadow-lg border outline-none py-2 px-3 transition-all ${
+                                  isDarkMode
+                                    ? "bg-zinc-900 border-zinc-800 text-zinc-200"
+                                    : "bg-white border-[#E2E8F0] text-zinc-700"
+                                }`}
+                              >
+                                <div className="text-[9px] font-bold text-zinc-400 uppercase tracking-wider mb-2 pb-1.5 border-b border-zinc-100 dark:border-zinc-800">
+                                  Show Columns
+                                </div>
+                                <div className="space-y-2">
+                                  {optionalColumnsList.map((col) => {
+                                    const isChecked = visibleColumns[col.key as keyof typeof visibleColumns];
+                                    return (
+                                      <div
+                                        key={col.key}
+                                        onClick={() => {
+                                          setVisibleColumns((prev) => ({
+                                            ...prev,
+                                            [col.key]: !prev[col.key as keyof typeof prev],
+                                          }));
+                                        }}
+                                        className="flex items-center gap-2 text-[10px] font-semibold cursor-pointer select-none py-0.5 hover:opacity-80"
+                                      >
+                                        <div
+                                          className={`h-3.5 w-3.5 rounded flex items-center justify-center border transition-all shrink-0 ${
+                                            isChecked
+                                              ? "bg-[#00637C] border-[#00637C] text-white"
+                                              : isDarkMode
+                                                ? "bg-zinc-800 border-zinc-700"
+                                                : "bg-white border-zinc-300"
+                                          }`}
+                                        >
+                                          {isChecked && <Check className="h-2.5 w-2.5 stroke-[3]" />}
+                                        </div>
+                                        <span>{col.label}</span>
+                                      </div>
+                                    );
+                                  })}
+                                </div>
+                              </div>
+                            )}
                           </div>
+
+                          <button
+                            onClick={handleSyncSheets}
+                            className="bg-[#00637C] hover:bg-[#004d60] text-white px-2 py-1.5 rounded-lg text-[10px] font-bold transition-all flex items-center gap-1 shadow-sm shrink-0 border border-[#00637C]"
+                          >
+                            <RefreshCw className="h-3 w-3" /> Sync Sheets
+                          </button>
+
+                          <button
+                            onClick={handleDownloadCSV}
+                            className={`px-2 py-1.5 rounded-lg text-[10px] font-bold transition-all flex items-center gap-1 shadow-sm shrink-0 border ${
+                              isDarkMode
+                                ? "bg-zinc-850 border-zinc-700 text-zinc-200 hover:bg-zinc-700"
+                                : "bg-[#e0f2f6] border-[#00637C]/20 text-[#00637C] hover:bg-[#cbeaf0]"
+                            }`}
+                          >
+                            <Download className="h-3 w-3" /> Download CSV
+                          </button>
+
+                          <button
+                            onClick={handleDeleteAllLeads}
+                            disabled={leads.length === 0}
+                            className={`px-2 py-1.5 rounded-lg text-[10px] font-bold transition-all flex items-center gap-1 shadow-sm shrink-0 border disabled:opacity-50 disabled:cursor-not-allowed ${
+                              isDarkMode
+                                ? "bg-red-950/20 border-red-500/30 text-red-400 hover:bg-red-950/40 hover:text-red-300"
+                                : "bg-red-50 border-red-200 text-red-600 hover:bg-red-100 hover:text-red-700"
+                            }`}
+                          >
+                            <Trash2 className="h-3 w-3" /> Delete All
+                          </button>
+                        </div>
+                      </div>
+
+                      {/* Filters Row below Title & Actions */}
+                      <div className="w-full overflow-x-auto pb-48 -mb-48 no-scrollbar scroll-smooth">
+                        <div className="flex items-center gap-1.5 min-w-max w-full">
+                          {/* Search Input */}
+                          <div className="relative w-48 md:w-56 shrink-0">
+                            <Search className="absolute left-2.5 top-2.5 h-3.5 w-3.5 text-zinc-400" />
+                            <input
+                              type="text"
+                              value={searchTerm}
+                              onChange={(e) => setSearchTerm(e.target.value)}
+                              placeholder="Search category/place..."
+                              className={`w-full pl-8 pr-3 py-1.5 border rounded-lg text-[10px] focus:outline-none focus:border-[#00637C] font-semibold transition-all ${
+                                isDarkMode
+                                  ? "bg-zinc-850 border-zinc-700 text-white"
+                                  : "bg-[#F5F7FA] border-zinc-200 text-[#111827]"
+                              }`}
+                            />
+                          </div>
+
+                          <CustomSelect
+                            value={filterAppearance}
+                            onChange={setFilterAppearance}
+                            options={[
+                              {
+                                label: "All Appearances",
+                                value: "All Appearances",
+                              },
+                              { label: "Good Site", value: "Good" },
+                              { label: "Redesign Site", value: "Redesign" },
+                              { label: "No Site", value: "Fresh" },
+                            ]}
+                            isDarkMode={isDarkMode}
+                          />
+
+                          <CustomSelect
+                            value={filterAtmosphere}
+                            onChange={setFilterAtmosphere}
+                            options={[
+                              {
+                                label: "All Atmospheres",
+                                value: "All Atmospheres",
+                              },
+                              { label: "Atmosphere: Good", value: "Good" },
+                              { label: "Atmosphere: Bad", value: "Bad" },
+                            ]}
+                            isDarkMode={isDarkMode}
+                          />
+
+                          <CustomSelect
+                            value={filterPincode}
+                            onChange={setFilterPincode}
+                            options={pincodeOptions}
+                            isDarkMode={isDarkMode}
+                          />
                         </div>
                       </div>
                     </div>
