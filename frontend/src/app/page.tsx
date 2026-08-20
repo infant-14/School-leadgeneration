@@ -2844,10 +2844,10 @@ export default function LeadGenWorkspace() {
                           <div className="relative" ref={columnsDropdownRef}>
                             <button
                               onClick={() => setIsColumnsDropdownOpen(!isColumnsDropdownOpen)}
-                              className={`px-2 py-1.5 rounded-lg text-[10px] font-bold transition-all flex items-center gap-1 shadow-sm shrink-0 border ${
+                              className={`px-2 py-1.5 rounded-lg text-[10px] font-bold transition-all flex items-center gap-1 shadow-sm shrink-0 border hover:scale-[1.02] ${
                                 isDarkMode
-                                  ? "bg-zinc-850 border-zinc-700 text-zinc-200 hover:bg-zinc-700"
-                                  : "bg-white border-zinc-200 text-zinc-700 hover:bg-zinc-50"
+                                  ? "bg-zinc-850 border-zinc-700 text-zinc-200 hover:bg-zinc-700 hover:text-white hover:border-[#00637C]"
+                                  : "bg-[#e0f2f6] border-[#00637C]/20 text-[#00637C] hover:bg-[#00637C] hover:text-white hover:border-[#00637C]"
                               }`}
                             >
                               <Eye className="h-3 w-3" /> Columns ▾
@@ -2899,17 +2899,21 @@ export default function LeadGenWorkspace() {
 
                           <button
                             onClick={handleSyncSheets}
-                            className="bg-[#00637C] hover:bg-[#004d60] text-white px-2 py-1.5 rounded-lg text-[10px] font-bold transition-all flex items-center gap-1 shadow-sm shrink-0 border border-[#00637C]"
+                            className={`px-2 py-1.5 rounded-lg text-[10px] font-bold transition-all flex items-center gap-1 shadow-sm shrink-0 border hover:scale-[1.02] ${
+                              isDarkMode
+                                ? "bg-zinc-850 border-zinc-700 text-zinc-200 hover:bg-zinc-700 hover:text-white hover:border-[#00637C]"
+                                : "bg-[#e0f2f6] border-[#00637C]/20 text-[#00637C] hover:bg-[#00637C] hover:text-white hover:border-[#00637C]"
+                            }`}
                           >
                             <RefreshCw className="h-3 w-3" /> Sync Sheets
                           </button>
 
                           <button
                             onClick={handleDownloadCSV}
-                            className={`px-2 py-1.5 rounded-lg text-[10px] font-bold transition-all flex items-center gap-1 shadow-sm shrink-0 border ${
+                            className={`px-2 py-1.5 rounded-lg text-[10px] font-bold transition-all flex items-center gap-1 shadow-sm shrink-0 border hover:scale-[1.02] ${
                               isDarkMode
-                                ? "bg-zinc-850 border-zinc-700 text-zinc-200 hover:bg-zinc-700"
-                                : "bg-[#e0f2f6] border-[#00637C]/20 text-[#00637C] hover:bg-[#cbeaf0]"
+                                ? "bg-zinc-850 border-zinc-700 text-zinc-200 hover:bg-zinc-700 hover:text-white hover:border-[#00637C]"
+                                : "bg-[#e0f2f6] border-[#00637C]/20 text-[#00637C] hover:bg-[#00637C] hover:text-white hover:border-[#00637C]"
                             }`}
                           >
                             <Download className="h-3 w-3" /> Download CSV
@@ -2918,10 +2922,10 @@ export default function LeadGenWorkspace() {
                           <button
                             onClick={handleDeleteAllLeads}
                             disabled={leads.length === 0}
-                            className={`px-2 py-1.5 rounded-lg text-[10px] font-bold transition-all flex items-center gap-1 shadow-sm shrink-0 border disabled:opacity-50 disabled:cursor-not-allowed ${
+                            className={`px-2 py-1.5 rounded-lg text-[10px] font-bold transition-all flex items-center gap-1 shadow-sm shrink-0 border disabled:opacity-50 disabled:cursor-not-allowed hover:scale-[1.02] ${
                               isDarkMode
-                                ? "bg-red-950/20 border-red-500/30 text-red-400 hover:bg-red-950/40 hover:text-red-300"
-                                : "bg-red-50 border-red-200 text-red-600 hover:bg-red-100 hover:text-red-700"
+                                ? "bg-red-950/20 border-red-500/30 text-red-400 hover:bg-red-700 hover:text-white hover:border-red-700"
+                                : "bg-red-50 border-red-200 text-red-600 hover:bg-red-600 hover:text-white hover:border-red-600"
                             }`}
                           >
                             <Trash2 className="h-3 w-3" /> Delete All
