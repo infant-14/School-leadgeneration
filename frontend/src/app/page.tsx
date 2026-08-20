@@ -218,6 +218,40 @@ function CustomSelect({
     </div>
   );
 }
+const cleanPhoneString = (phoneStr: string) => {
+  if (!phoneStr || phoneStr.toLowerCase() === "n/a" || phoneStr.toLowerCase() === "none") {
+    return "N/A";
+  }
+  const parts = phoneStr.split("/").map((p) => p.trim()).filter(Boolean);
+  const seenNormalized: string[] = [];
+  const uniqueParts: string[] = [];
+  
+  for (const part of parts) {
+    const digits = part.replace(/\D/g, "");
+    if (!digits) continue;
+    
+    let isDup = false;
+    for (let i = 0; i < seenNormalized.length; i++) {
+      const seenDigits = seenNormalized[i];
+      const minLen = Math.min(digits.length, seenDigits.length);
+      if ((minLen >= 7 && digits.slice(-minLen) === seenDigits.slice(-minLen)) || digits === seenDigits) {
+        isDup = true;
+        if (digits.length > seenDigits.length) {
+          seenNormalized[i] = digits;
+          uniqueParts[i] = part;
+        }
+        break;
+      }
+    }
+    
+    if (!isDup) {
+      seenNormalized.push(digits);
+      uniqueParts.push(part);
+    }
+  }
+  
+  return uniqueParts.length > 0 ? uniqueParts.join(" / ") : "N/A";
+};
 
 export default function LeadGenWorkspace() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -869,7 +903,7 @@ export default function LeadGenWorkspace() {
       const values = [
         lead.school_name,
         lead.website_url,
-        lead.contact_number,
+        cleanPhoneString(lead.contact_number),
         lead.area_name,
         lead.address || "",
         lead.pincode || "",
@@ -1364,7 +1398,7 @@ export default function LeadGenWorkspace() {
                     <td
                       className={`p-3 border-r font-mono font-bold ${isDarkMode ? "border-zinc-800" : "border-[#E2E8F0]"}`}
                     >
-                      {lead.contact_number || "N/A"}
+                      {cleanPhoneString(lead.contact_number)}
                     </td>
                     <td
                       className={`p-3 border-r text-zinc-500 font-semibold break-words max-w-[250px] ${isDarkMode ? "border-zinc-800" : "border-[#E2E8F0]"}`}
@@ -3003,7 +3037,7 @@ export default function LeadGenWorkspace() {
                         Contact Phone
                       </span>
                       <span className="text-xs font-bold mt-0.5 block font-mono">
-                        {selectedLead.contact_number || "N/A"}
+                        {cleanPhoneString(selectedLead.contact_number)}
                       </span>
                     </div>
                   </div>

@@ -133,7 +133,30 @@ def clean_contact_number(contact_str: str) -> str:
         cleaned_parts.append(part)
         
     if cleaned_parts:
-        return " / ".join(cleaned_parts)
+        seen_normalized = []
+        unique_parts = []
+        for part in cleaned_parts:
+            digits = "".join(filter(str.isdigit, part))
+            if not digits:
+                continue
+            
+            is_dup = False
+            for idx, seen_digits in enumerate(seen_normalized):
+                min_len = min(len(digits), len(seen_digits))
+                if (min_len >= 7 and digits[-min_len:] == seen_digits[-min_len:]) or (digits == seen_digits):
+                    is_dup = True
+                    # If the new one is longer, replace the existing one to keep more info (like area code)
+                    if len(digits) > len(seen_digits):
+                        seen_normalized[idx] = digits
+                        unique_parts[idx] = part
+                    break
+            
+            if not is_dup:
+                seen_normalized.append(digits)
+                unique_parts.append(part)
+                
+        if unique_parts:
+            return " / ".join(unique_parts)
     return "N/A"
 
 
