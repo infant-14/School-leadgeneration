@@ -14,14 +14,16 @@ export class ConfigController {
 
   private getGoogleServiceAccountEmail(): string {
     try {
-      const rootDir = path.resolve(__dirname, '../..');
+      const rootDir = path.resolve(__dirname, '../../..');
       const possiblePaths = [
-        path.join(rootDir, 'credentials.json'),
+        path.join(rootDir, 'backend', 'google_credentials.json'),
+        path.join(rootDir, 'backend', 'credentials.json'),
         path.join(rootDir, 'google_credentials.json'),
-        path.resolve(process.cwd(), 'credentials.json'),
+        path.join(rootDir, 'credentials.json'),
         path.resolve(process.cwd(), 'google_credentials.json'),
-        path.resolve(process.cwd(), 'backend/credentials.json'),
+        path.resolve(process.cwd(), 'credentials.json'),
         path.resolve(process.cwd(), 'backend/google_credentials.json'),
+        path.resolve(process.cwd(), 'backend/credentials.json'),
       ];
       for (const credentialsPath of possiblePaths) {
         if (fs.existsSync(credentialsPath)) {

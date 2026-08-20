@@ -238,12 +238,14 @@ export class LeadsService {
 
     let credentialsPath = '';
     const possiblePaths = [
-      path.join(this.rootDir, 'credentials.json'),
+      path.join(this.rootDir, 'backend', 'google_credentials.json'),
+      path.join(this.rootDir, 'backend', 'credentials.json'),
       path.join(this.rootDir, 'google_credentials.json'),
-      path.resolve(process.cwd(), 'credentials.json'),
+      path.join(this.rootDir, 'credentials.json'),
       path.resolve(process.cwd(), 'google_credentials.json'),
-      path.resolve(process.cwd(), 'backend/credentials.json'),
+      path.resolve(process.cwd(), 'credentials.json'),
       path.resolve(process.cwd(), 'backend/google_credentials.json'),
+      path.resolve(process.cwd(), 'backend/credentials.json'),
     ];
     for (const p of possiblePaths) {
       if (fs.existsSync(p)) {
@@ -284,40 +286,163 @@ export class LeadsService {
         "Remarks"
       ];
 
-      const values: string[][] = [HEADERS];
-      leads.forEach((lead, idx) => {
-        values.push([
-          String(idx + 1),
-          lead.school_name || "",
-          "", // Customer Name
-          lead.institution_type || "Matriculation",
-          lead.social_media || "Inactive",
-          lead.area_name || "",
-          lead.atmosphere || "Good",
-          lead.website_url || "",
-          lead.contact_number || "",
-          lead.address || "",
-          lead.pincode || "",
-          lead.appearance || "Redesign",
-          lead.remarks || ""
-        ]);
-      });
-
-      // Clear existing values in sheet
-      await sheets.spreadsheets.values.clear({
+      // Get current spreadsheet metadata to inspect existing tabs
+      const metadata = await sheets.spreadsheets.get({
         spreadsheetId: sheetId,
-        range: 'Sheet1!A1:M1000',
+      });
+      const existingTitles = new Set(metadata.data.sheets.map(s => s.properties.title));
+
+      if (leads.length === 0) {
+        const defaultSheetName = 'All Leads';
+        const addRequests = [];
+        if (!existingTitles.has(defaultSheetName)) {
+          addRequests.push({
+            addSheet: {
+              properties: { title: defaultSheetName }
+            }
+          });
+        }
+        if (addRequests.length > 0) {
+          await sheets.spreadsheets.batchUpdate({
+            spreadsheetId: sheetId,
+            requestBody: { requests: addRequests }
+          });
+        }
+        await sheets.spreadsheets.values.clear({
+          spreadsheetId: sheetId,
+          range: `${defaultSheetName}!A1:M1000`,
+        });
+        await sheets.spreadsheets.values.update({
+          spreadsheetId: sheetId,
+          range: `${defaultSheetName}!A1`,
+          valueInputOption: 'RAW',
+          requestBody: { values: [HEADERS] },
+        });
+        return `Google Sheet synced successfully: 0 leads (updated '${defaultSheetName}').`;
+      }
+
+      // Group leads by query (search_area + institution_type)
+      const groups: { [key: string]: Lead[] } = {};
+      leads.forEach(lead => {
+        const area = (lead.search_area || 'General').trim();
+        const type = (lead.institution_type || 'Leads').trim();
+        
+        // Capitalize words for clean sheet name (e.g. "Tambaram CBSE")
+        const formatName = (str: string) => 
+          str.split(/\s+/)
+             .map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase())
+             .join(' ');
+             
+        let sheetName = `${formatName(area)} ${formatName(type)}`
+          .replace(/[\[\]\*\?\/\\:]/g, '') // Remove disallowed characters
+          .trim();
+        
+        // Google Sheets sheet titles have a 30-char limit
+        if (sheetName.length > 30) {
+          sheetName = sheetName.substring(0, 30).trim();
+        }
+        
+        if (!sheetName) {
+          sheetName = 'General Leads';
+        }
+        
+        if (!groups[sheetName]) {
+          groups[sheetName] = [];
+        }
+        groups[sheetName].push(lead);
       });
 
-      // Write new values
-      const response = await sheets.spreadsheets.values.update({
+      // Identify missing sheets and create them in one batch update
+      const addRequests = [];
+      for (const sheetName of Object.keys(groups)) {
+        if (!existingTitles.has(sheetName)) {
+          addRequests.push({
+            addSheet: {
+              properties: { title: sheetName }
+            }
+          });
+        }
+      }
+
+      if (addRequests.length > 0) {
+        await sheets.spreadsheets.batchUpdate({
+          spreadsheetId: sheetId,
+          requestBody: {
+            requests: addRequests
+          }
+        });
+      }
+
+      // Clear existing data in target sheets
+      const rangesToClear = Object.keys(groups).map(name => `${name}!A1:M1000`);
+      await sheets.spreadsheets.values.batchClear({
         spreadsheetId: sheetId,
-        range: 'Sheet1!A1',
-        valueInputOption: 'RAW',
-        requestBody: { values },
+        requestBody: {
+          ranges: rangesToClear
+        }
       });
 
-      const message = `Google Sheet synced successfully natively: ${response.data.updatedCells} cells updated.`;
+      // Prepare batch updates
+      const dataToUpdate = Object.entries(groups).map(([name, groupLeads]) => {
+        const values: string[][] = [HEADERS];
+        groupLeads.forEach((lead, idx) => {
+          values.push([
+            String(idx + 1),
+            lead.school_name || "",
+            "", // Customer Name
+            lead.institution_type || "Matriculation",
+            lead.social_media || "Inactive",
+            lead.area_name || "",
+            lead.atmosphere || "Good",
+            lead.website_url || "",
+            lead.contact_number || "",
+            lead.address || "",
+            lead.pincode || "",
+            lead.appearance || "Redesign",
+            lead.remarks || ""
+          ]);
+        });
+        
+        return {
+          range: `${name}!A1`,
+          values: values
+        };
+      });
+
+      await sheets.spreadsheets.values.batchUpdate({
+        spreadsheetId: sheetId,
+        requestBody: {
+          valueInputOption: 'RAW',
+          data: dataToUpdate
+        }
+      });
+
+      // Delete the default "Sheet1" if it exists and is not in our groups to keep it clean
+      const updatedTitles = new Set([...existingTitles, ...Object.keys(groups)]);
+      if (existingTitles.has('Sheet1') && !groups['Sheet1'] && updatedTitles.size > 1) {
+        try {
+          const sheet1 = metadata.data.sheets.find(s => s.properties.title === 'Sheet1');
+          if (sheet1) {
+            await sheets.spreadsheets.batchUpdate({
+              spreadsheetId: sheetId,
+              requestBody: {
+                requests: [
+                  {
+                    deleteSheet: {
+                      sheetId: sheet1.properties.sheetId
+                    }
+                  }
+                ]
+              }
+            });
+          }
+        } catch (err) {
+          this.logger.warn(`Could not delete Sheet1: ${err.message}`);
+        }
+      }
+
+      const totalUpdatedSheets = Object.keys(groups).length;
+      const message = `Google Sheet synced successfully: Created/Updated ${totalUpdatedSheets} tab(s) based on search queries.`;
       this.logger.log(message);
       return message;
 

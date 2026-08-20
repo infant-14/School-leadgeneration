@@ -318,10 +318,15 @@ export default function LeadGenWorkspace() {
   const [alertState, setAlertState] = useState<{
     message: string;
     type: "info" | "error" | "success";
+    showSheetLink?: boolean;
   } | null>(null);
 
-  const showAlert = (message: string, type: "info" | "error" | "success" = "info") => {
-    setAlertState({ message, type });
+  const showAlert = (
+    message: string,
+    type: "info" | "error" | "success" = "info",
+    showSheetLink?: boolean
+  ) => {
+    setAlertState({ message, type, showSheetLink });
   };
 
   // Scraper Validation Error States
@@ -939,6 +944,7 @@ export default function LeadGenWorkspace() {
         },
       });
       if (res.ok) {
+        const data = await res.json();
         setNotifications((prev) => [
           {
             id: Date.now(),
@@ -948,7 +954,7 @@ export default function LeadGenWorkspace() {
           },
           ...prev,
         ]);
-        showAlert("Synced successfully to Google Sheets!", "success");
+        showAlert(data.output || "Synced successfully to Google Sheets!", "success", true);
       } else {
         const err = await res.json();
         showAlert(
@@ -966,7 +972,7 @@ export default function LeadGenWorkspace() {
         },
         ...prev,
       ]);
-      showAlert("Simulated: Synced successfully to Google Sheets!", "success");
+      showAlert("Simulated: Synced successfully to Google Sheets!", "success", true);
     }
   };
 
@@ -3121,7 +3127,7 @@ export default function LeadGenWorkspace() {
                             : "bg-[#F8FAFC] border-[#E2E8F0] text-[#111827]"
                         }`}
                       >
-                        <span className="font-mono truncate flex-1">{googleServiceEmail}</span>
+                        <span className="font-mono break-all flex-1">{googleServiceEmail}</span>
                         <button
                           type="button"
                           onClick={() => {
@@ -3795,61 +3801,85 @@ export default function LeadGenWorkspace() {
               </form>
             </div>
           </div>
-          {/* Premium In-App Alert Modal */}
-          {alertState && (
-            <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in">
+        </>
+      )}
+      {/* Premium In-App Alert Modal */}
+      {alertState && (
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in">
+          <div
+            className={`max-w-md w-full border rounded-2xl p-6 shadow-2xl space-y-4 relative z-10 transition-all duration-300 transform scale-100 ${
+              isDarkMode
+                ? "bg-zinc-900 border-zinc-800 text-white"
+                : "bg-white border-[#E2E8F0] text-[#111827]"
+            }`}
+          >
+            <div className="flex items-start gap-4">
               <div
-                className={`max-w-md w-full border rounded-2xl p-6 shadow-2xl space-y-4 relative z-10 transition-all duration-300 transform scale-100 ${
-                  isDarkMode
-                    ? "bg-zinc-900 border-zinc-800 text-white"
-                    : "bg-white border-[#E2E8F0] text-[#111827]"
+                className={`h-10 w-10 rounded-xl flex items-center justify-center shrink-0 ${
+                  alertState.type === "success"
+                    ? "bg-emerald-50 text-emerald-600 dark:bg-emerald-950/20 dark:text-emerald-400"
+                    : alertState.type === "error"
+                      ? "bg-rose-50 text-rose-600 dark:bg-rose-950/20 dark:text-rose-400"
+                      : "bg-[#e0f2f6] text-[#00637C]"
                 }`}
               >
-                <div className="flex items-start gap-4">
-                  <div
-                    className={`h-10 w-10 rounded-xl flex items-center justify-center shrink-0 ${
-                      alertState.type === "success"
-                        ? "bg-emerald-50 text-emerald-600 dark:bg-emerald-950/20 dark:text-emerald-400"
-                        : alertState.type === "error"
-                          ? "bg-rose-50 text-rose-600 dark:bg-rose-950/20 dark:text-rose-400"
-                          : "bg-[#e0f2f6] text-[#00637C]"
-                    }`}
-                  >
-                    {alertState.type === "success" && (
-                      <CheckCircle className="h-5 w-5" />
-                    )}
-                    {alertState.type === "error" && (
-                      <AlertCircle className="h-5 w-5" />
-                    )}
-                    {alertState.type === "info" && (
-                      <Sparkles className="h-5 w-5" />
-                    )}
-                  </div>
-                  <div className="space-y-1">
-                    <h4 className="text-xs font-black uppercase tracking-wider text-[#00637C]">
-                      {alertState.type === "success"
-                        ? "Success"
-                        : alertState.type === "error"
-                          ? "Validation Alert"
-                          : "Notification"}
-                    </h4>
-                    <p className="text-[11px] leading-relaxed text-zinc-550 dark:text-zinc-400 font-semibold">
-                      {alertState.message}
-                    </p>
-                  </div>
-                </div>
-                <div className="flex justify-end pt-2">
-                  <button
-                    onClick={() => setAlertState(null)}
-                    className="bg-[#00637C] hover:bg-[#004d60] text-white px-4 py-1.5 rounded-lg text-[10px] font-bold transition-all shadow-md active:scale-95 border border-[#00637C]"
-                  >
-                    Okay
-                  </button>
-                </div>
+                {alertState.type === "success" && (
+                  <CheckCircle className="h-5 w-5" />
+                )}
+                {alertState.type === "error" && (
+                  <AlertCircle className="h-5 w-5" />
+                )}
+                {alertState.type === "info" && (
+                  <Sparkles className="h-5 w-5" />
+                )}
+              </div>
+              <div className="space-y-1">
+                <h4 className="text-xs font-black uppercase tracking-wider text-[#00637C]">
+                  {alertState.type === "success"
+                    ? "Success"
+                    : alertState.type === "error"
+                      ? "Validation Alert"
+                      : "Notification"}
+                </h4>
+                <p className="text-[11px] leading-relaxed text-zinc-550 dark:text-zinc-400 font-semibold">
+                  {alertState.message}
+                </p>
               </div>
             </div>
-          )}
-        </>
+            {alertState.showSheetLink ? (
+              <div className="flex justify-end gap-2 pt-2">
+                <button
+                  onClick={() => setAlertState(null)}
+                  className={`px-4 py-1.5 rounded-lg text-[10px] font-bold transition-all border ${
+                    isDarkMode
+                      ? "border-zinc-700 bg-zinc-800 text-zinc-300 hover:bg-zinc-700"
+                      : "border-zinc-200 bg-zinc-100 text-zinc-650 hover:bg-zinc-200"
+                  }`}
+                >
+                  Cancel
+                </button>
+                <a
+                  href={`https://docs.google.com/spreadsheets/d/${sheetId}/edit`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  onClick={() => setAlertState(null)}
+                  className="bg-[#00637C] hover:bg-[#004d60] text-white px-4 py-1.5 rounded-lg text-[10px] font-bold transition-all shadow-md active:scale-95 border border-[#00637C] inline-flex items-center gap-1"
+                >
+                  Open Google Sheet
+                </a>
+              </div>
+            ) : (
+              <div className="flex justify-end pt-2">
+                <button
+                  onClick={() => setAlertState(null)}
+                  className="bg-[#00637C] hover:bg-[#004d60] text-white px-4 py-1.5 rounded-lg text-[10px] font-bold transition-all shadow-md active:scale-95 border border-[#00637C]"
+                >
+                  Okay
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
       )}
     </div>
   );
