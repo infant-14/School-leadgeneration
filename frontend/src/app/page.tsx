@@ -313,6 +313,21 @@ export default function LeadGenWorkspace() {
   const [filterAppearance, setFilterAppearance] = useState("All Appearances");
   const [filterPincode, setFilterPincode] = useState("All Pincodes");
 
+  // Premium In-App Alert State
+  const [alertState, setAlertState] = useState<{
+    message: string;
+    type: "info" | "error" | "success";
+  } | null>(null);
+
+  const showAlert = (message: string, type: "info" | "error" | "success" = "info") => {
+    setAlertState({ message, type });
+  };
+
+  // Scraper Validation Error States
+  const [areaError, setAreaError] = useState<string | null>(null);
+  const [typeError, setTypeError] = useState<string | null>(null);
+  const [limitError, setLimitError] = useState<string | null>(null);
+
   // Dynamic Columns Visibility State
   const [visibleColumns, setVisibleColumns] = useState({
     customerName: false,
@@ -356,10 +371,10 @@ export default function LeadGenWorkspace() {
   // Scraper inputs
   const [areaInput, setAreaInput] = useState("");
   const [typeInput, setTypeInput] = useState("");
-  const [limitInput, setLimitInput] = useState(30);
+  const [limitInput, setLimitInput] = useState<number | null>(null);
   const [isScanDepthOpen, setIsScanDepthOpen] = useState(false);
   const [isCustomLimit, setIsCustomLimit] = useState(false);
-  const [customLimit, setCustomLimit] = useState<number | "">(10);
+  const [customLimit, setCustomLimit] = useState<number | "">("");
 
   // Stepper & Progress State
   const [currentStep, setCurrentStep] = useState(1);
@@ -532,7 +547,7 @@ export default function LeadGenWorkspace() {
   const handleAddLeadSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newSchoolName || !newLocation) {
-      alert("Please fill in Business Name and Target Area / Location.");
+      showAlert("Please fill in Business Name and Target Area / Location.", "error");
       return;
     }
     setIsAddLoading(true);
@@ -573,7 +588,7 @@ export default function LeadGenWorkspace() {
       setNewContactNumber("");
       setNewStage("New Lead");
     } catch (err: any) {
-      alert(err.message || "Something went wrong.");
+      showAlert(err.message || "Something went wrong.", "error");
     } finally {
       setIsAddLoading(false);
     }
@@ -725,6 +740,45 @@ export default function LeadGenWorkspace() {
 
   const handleStartSearch = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    let hasError = false;
+    
+    if (!areaInput.trim()) {
+      setAreaError("Area is required");
+      hasError = true;
+    } else {
+      setAreaError(null);
+    }
+    
+    if (!typeInput.trim()) {
+      setTypeError("Category is required");
+      hasError = true;
+    } else {
+      setTypeError(null);
+    }
+    
+    if (isCustomLimit) {
+      const customNum = Number(customLimit);
+      if (customLimit === "" || isNaN(customNum) || customNum <= 0) {
+        setLimitError("Enter limit > 0");
+        hasError = true;
+      } else {
+        setLimitError(null);
+      }
+    } else {
+      const limitNum = Number(limitInput);
+      if (!limitInput || isNaN(limitNum) || limitNum <= 0) {
+        setLimitError("Limit is required");
+        hasError = true;
+      } else {
+        setLimitError(null);
+      }
+    }
+    
+    if (hasError) {
+      return;
+    }
+
     setIsSearching(true);
     setLogs([
       `> Starting discovery job for '${typeInput}' in '${areaInput}'...`,
@@ -891,11 +945,12 @@ export default function LeadGenWorkspace() {
           },
           ...prev,
         ]);
-        alert("Synced successfully to Google Sheets!");
+        showAlert("Synced successfully to Google Sheets!", "success");
       } else {
         const err = await res.json();
-        alert(
+        showAlert(
           `Google Sheets Sync failed: ${err.message || err.detail || res.statusText || "Unknown Error"}`,
+          "error"
         );
       }
     } catch (e) {
@@ -908,13 +963,13 @@ export default function LeadGenWorkspace() {
         },
         ...prev,
       ]);
-      alert("Simulated: Synced successfully to Google Sheets!");
+      showAlert("Simulated: Synced successfully to Google Sheets!", "success");
     }
   };
 
   const handleDownloadCSV = () => {
     if (filteredLeads.length === 0) {
-      alert("No leads available to download.");
+      showAlert("No leads available to download.", "info");
       return;
     }
 
@@ -2314,40 +2369,58 @@ export default function LeadGenWorkspace() {
                       onSubmit={handleStartSearch}
                       className="grid grid-cols-1 md:grid-cols-5 gap-4 items-end"
                     >
-                      <div className="md:col-span-2">
+                      <div className="md:col-span-2 relative">
                         <label className="block text-[9px] font-bold uppercase tracking-wider text-zinc-400 mb-1.5">
                           Target Area / Location
                         </label>
                         <input
                           type="text"
                           value={areaInput}
-                          onChange={(e) => setAreaInput(e.target.value)}
+                          onChange={(e) => {
+                            setAreaInput(e.target.value);
+                            if (e.target.value.trim()) setAreaError(null);
+                          }}
                           placeholder="e.g. Tambaram"
-                          className={`w-full border rounded-xl px-3.5 py-2 text-xs focus:outline-none focus:border-[#00637C] focus:ring-1 focus:ring-[#00637C] font-semibold transition-all ${
-                            isDarkMode
-                              ? "bg-zinc-850 border-zinc-700 text-white"
-                              : "bg-[#F8FAFC] border-zinc-200 text-[#111827]"
+                          className={`w-full border rounded-xl px-3.5 py-2 text-xs focus:outline-none focus:ring-1 font-semibold transition-all ${
+                            areaError
+                              ? "border-red-500 focus:border-red-500 focus:ring-red-500 text-red-600 dark:text-red-400"
+                              : isDarkMode
+                                ? "bg-zinc-850 border-zinc-700 text-white focus:border-[#00637C] focus:ring-[#00637C]"
+                                : "bg-[#F8FAFC] border-zinc-200 text-[#111827] focus:border-[#00637C] focus:ring-[#00637C]"
                           }`}
-                          required
                         />
+                        {areaError && (
+                          <span className="absolute text-[9px] font-bold text-red-500 left-0 top-full mt-1 block">
+                            {areaError}
+                          </span>
+                        )}
                       </div>
 
-                      <div className="md:col-span-2">
+                      <div className="md:col-span-2 relative">
                         <label className="block text-[9px] font-bold uppercase tracking-wider text-zinc-400 mb-1.5">
                           Category / Type
                         </label>
                         <input
                           type="text"
                           value={typeInput}
-                          onChange={(e) => setTypeInput(e.target.value)}
+                          onChange={(e) => {
+                            setTypeInput(e.target.value);
+                            if (e.target.value.trim()) setTypeError(null);
+                          }}
                           placeholder="e.g. schools, pharmacy, tea shop"
-                          className={`w-full border rounded-xl px-3.5 py-2 text-xs focus:outline-none focus:border-[#00637C] focus:ring-1 focus:ring-[#00637C] font-semibold transition-all ${
-                            isDarkMode
-                              ? "bg-zinc-850 border-zinc-700 text-white"
-                              : "bg-[#F8FAFC] border-zinc-200 text-[#111827]"
+                          className={`w-full border rounded-xl px-3.5 py-2 text-xs focus:outline-none focus:ring-1 font-semibold transition-all ${
+                            typeError
+                              ? "border-red-500 focus:border-red-500 focus:ring-red-500 text-red-600 dark:text-red-400"
+                              : isDarkMode
+                                ? "bg-zinc-850 border-zinc-700 text-white focus:border-[#00637C] focus:ring-[#00637C]"
+                                : "bg-[#F8FAFC] border-zinc-200 text-[#111827] focus:border-[#00637C] focus:ring-[#00637C]"
                           }`}
-                          required
                         />
+                        {typeError && (
+                          <span className="absolute text-[9px] font-bold text-red-500 left-0 top-full mt-1 block">
+                            {typeError}
+                          </span>
+                        )}
                       </div>
 
                       <div className="md:col-span-1 relative flex flex-col justify-end">
@@ -2367,13 +2440,18 @@ export default function LeadGenWorkspace() {
                                   setCustomLimit(val === "" ? "" : Number(val));
                                   if (val !== "") {
                                     setLimitInput(Number(val));
+                                    setLimitError(null);
+                                  } else {
+                                    setLimitError("Enter limit > 0");
                                   }
                                 }}
                                 placeholder="Limit"
-                                className={`w-full border rounded-xl pl-3.5 pr-8 py-2 text-xs focus:outline-none focus:border-[#00637C] focus:ring-1 focus:ring-[#00637C] font-semibold transition-all ${
-                                  isDarkMode
-                                    ? "bg-zinc-850 border-zinc-700 text-white placeholder-zinc-500"
-                                    : "bg-[#F8FAFC] border-zinc-200 text-[#111827] placeholder-zinc-400"
+                                className={`w-full border rounded-xl pl-3.5 pr-8 py-2 text-xs focus:outline-none focus:ring-1 font-semibold transition-all ${
+                                  limitError
+                                    ? "border-red-500 focus:border-red-500 focus:ring-red-500 text-red-600 dark:text-red-400"
+                                    : isDarkMode
+                                      ? "bg-zinc-850 border-zinc-700 text-white placeholder-zinc-500 focus:border-[#00637C] focus:ring-[#00637C]"
+                                      : "bg-[#F8FAFC] border-zinc-200 text-[#111827] placeholder-zinc-400 focus:border-[#00637C] focus:ring-[#00637C]"
                                 }`}
                               />
                               <button
@@ -2403,17 +2481,20 @@ export default function LeadGenWorkspace() {
                               onClick={() =>
                                 setIsScanDepthOpen(!isScanDepthOpen)
                               }
-                              className={`w-full border rounded-xl px-3.5 py-2 text-xs focus:outline-none focus:border-[#00637C] focus:ring-1 focus:ring-[#00637C] font-semibold transition-all flex items-center justify-between gap-1.5 select-none ${
-                                isDarkMode
-                                  ? "bg-zinc-850 border-zinc-700 text-white hover:bg-zinc-800"
-                                  : "bg-[#F8FAFC] border-zinc-200 text-[#111827] hover:bg-zinc-50"
+                              className={`w-full border rounded-xl px-3.5 py-2 text-xs focus:outline-none focus:ring-1 font-semibold transition-all flex items-center justify-between gap-1.5 select-none ${
+                                limitError
+                                  ? "border-red-500 focus:border-red-500 focus:ring-red-500"
+                                  : isDarkMode
+                                    ? "bg-zinc-850 border-zinc-700 text-white hover:bg-zinc-800 focus:border-[#00637C] focus:ring-[#00637C]"
+                                    : "bg-[#F8FAFC] border-zinc-200 text-[#111827] hover:bg-zinc-50 focus:border-[#00637C] focus:ring-[#00637C]"
                               }`}
                             >
-                              <span>
+                              <span className={!limitInput ? "text-zinc-400 dark:text-zinc-500 font-semibold" : "text-[#111827] dark:text-white"}>
                                 {limitInput === 30 && "30 (Page 1)"}
                                 {limitInput === 60 && "60 (Pages 1 & 2)"}
                                 {limitInput === 90 && "90 (Pages 1 - 3)"}
                                 {limitInput === 150 && "150 (Deep Scan)"}
+                                {limitInput !== 30 && limitInput !== 60 && limitInput !== 90 && limitInput !== 150 && (limitInput ? `${limitInput} (Custom)` : "Limit")}
                               </span>
                               <svg
                                 className={`h-3 w-3 transition-transform ${isScanDepthOpen ? "rotate-180" : ""}`}
@@ -2462,12 +2543,18 @@ export default function LeadGenWorkspace() {
                                       onClick={() => {
                                         if (option.value === "custom") {
                                           setIsCustomLimit(true);
-                                          setLimitInput(
-                                            Number(customLimit) || 10,
-                                          );
+                                          const numVal = Number(customLimit);
+                                          if (customLimit !== "" && !isNaN(numVal) && numVal > 0) {
+                                            setLimitInput(numVal);
+                                            setLimitError(null);
+                                          } else {
+                                            setLimitInput(null);
+                                            setLimitError("Enter limit > 0");
+                                          }
                                         } else {
                                           setIsCustomLimit(false);
                                           setLimitInput(Number(option.value));
+                                          setLimitError(null);
                                         }
                                         setIsScanDepthOpen(false);
                                       }}
@@ -2485,6 +2572,11 @@ export default function LeadGenWorkspace() {
                                 })}
                               </div>
                             </>
+                          )}
+                          {limitError && (
+                            <span className="absolute text-[9px] font-bold text-red-500 left-0 top-full mt-1 block">
+                              {limitError}
+                            </span>
                           )}
                         </div>
                       </div>
@@ -3679,6 +3771,60 @@ export default function LeadGenWorkspace() {
               </form>
             </div>
           </div>
+          {/* Premium In-App Alert Modal */}
+          {alertState && (
+            <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in">
+              <div
+                className={`max-w-md w-full border rounded-2xl p-6 shadow-2xl space-y-4 relative z-10 transition-all duration-300 transform scale-100 ${
+                  isDarkMode
+                    ? "bg-zinc-900 border-zinc-800 text-white"
+                    : "bg-white border-[#E2E8F0] text-[#111827]"
+                }`}
+              >
+                <div className="flex items-start gap-4">
+                  <div
+                    className={`h-10 w-10 rounded-xl flex items-center justify-center shrink-0 ${
+                      alertState.type === "success"
+                        ? "bg-emerald-50 text-emerald-600 dark:bg-emerald-950/20 dark:text-emerald-400"
+                        : alertState.type === "error"
+                          ? "bg-rose-50 text-rose-600 dark:bg-rose-950/20 dark:text-rose-400"
+                          : "bg-[#e0f2f6] text-[#00637C]"
+                    }`}
+                  >
+                    {alertState.type === "success" && (
+                      <CheckCircle className="h-5 w-5" />
+                    )}
+                    {alertState.type === "error" && (
+                      <AlertCircle className="h-5 w-5" />
+                    )}
+                    {alertState.type === "info" && (
+                      <Sparkles className="h-5 w-5" />
+                    )}
+                  </div>
+                  <div className="space-y-1">
+                    <h4 className="text-xs font-black uppercase tracking-wider text-[#00637C]">
+                      {alertState.type === "success"
+                        ? "Success"
+                        : alertState.type === "error"
+                          ? "Validation Alert"
+                          : "Notification"}
+                    </h4>
+                    <p className="text-[11px] leading-relaxed text-zinc-550 dark:text-zinc-400 font-semibold">
+                      {alertState.message}
+                    </p>
+                  </div>
+                </div>
+                <div className="flex justify-end pt-2">
+                  <button
+                    onClick={() => setAlertState(null)}
+                    className="bg-[#00637C] hover:bg-[#004d60] text-white px-4 py-1.5 rounded-lg text-[10px] font-bold transition-all shadow-md active:scale-95 border border-[#00637C]"
+                  >
+                    Okay
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
         </>
       )}
     </div>
