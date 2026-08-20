@@ -12,6 +12,29 @@ export class ConfigController {
     return path.resolve(__dirname, '../../../../.env');
   })();
 
+  private getGoogleServiceAccountEmail(): string {
+    try {
+      const rootDir = path.resolve(__dirname, '../..');
+      const possiblePaths = [
+        path.join(rootDir, 'credentials.json'),
+        path.join(rootDir, 'google_credentials.json'),
+        path.resolve(process.cwd(), 'credentials.json'),
+        path.resolve(process.cwd(), 'google_credentials.json'),
+        path.resolve(process.cwd(), 'backend/credentials.json'),
+        path.resolve(process.cwd(), 'backend/google_credentials.json'),
+      ];
+      for (const credentialsPath of possiblePaths) {
+        if (fs.existsSync(credentialsPath)) {
+          const creds = JSON.parse(fs.readFileSync(credentialsPath, 'utf8'));
+          return creds.client_email || '';
+        }
+      }
+    } catch (e) {
+      // Ignore reading errors
+    }
+    return '';
+  }
+
   @Get()
   getConfig() {
     const key = process.env.GEMINI_API_KEY || '';
@@ -20,6 +43,7 @@ export class ConfigController {
     return {
       gemini_api_key: maskedKey,
       google_sheet_id: process.env.GOOGLE_SHEET_ID || '',
+      google_service_email: this.getGoogleServiceAccountEmail(),
       ai_provider: process.env.AI_PROVIDER || 'none',
       ollama_base_url: process.env.OLLAMA_BASE_URL || 'http://localhost:11434',
       ollama_model: process.env.OLLAMA_MODEL || 'llama3.2',

@@ -31,6 +31,7 @@ import {
   Database,
   Globe,
   Check,
+  Copy,
   Eye,
 } from "lucide-react";
 import {
@@ -444,6 +445,7 @@ export default function LeadGenWorkspace() {
   // Config State
   const [geminiKey, setGeminiKey] = useState("");
   const [sheetId, setSheetId] = useState("");
+  const [googleServiceEmail, setGoogleServiceEmail] = useState("");
   const [configLoading, setConfigLoading] = useState(false);
   const [configMessage, setConfigMessage] = useState("");
   const [aiProvider, setAiProvider] = useState("none");
@@ -623,6 +625,7 @@ export default function LeadGenWorkspace() {
         const data = await res.json();
         setGeminiKey(data.gemini_api_key || "");
         setSheetId(data.google_sheet_id || "");
+        setGoogleServiceEmail(data.google_service_email || "");
         setAiProvider(data.ai_provider || "none");
         setOllamaBaseUrl(data.ollama_base_url || "http://localhost:11434");
         setOllamaModel(data.ollama_model || "llama3.2");
@@ -2888,7 +2891,7 @@ export default function LeadGenWorkspace() {
                             />
                           </div>
 
-                          <CustomSelect
+                           <CustomSelect
                             value={filterAppearance}
                             onChange={setFilterAppearance}
                             options={[
@@ -2899,20 +2902,6 @@ export default function LeadGenWorkspace() {
                               { label: "Good Site", value: "Good" },
                               { label: "Redesign Site", value: "Redesign" },
                               { label: "No Site", value: "Fresh" },
-                            ]}
-                            isDarkMode={isDarkMode}
-                          />
-
-                          <CustomSelect
-                            value={filterAtmosphere}
-                            onChange={setFilterAtmosphere}
-                            options={[
-                              {
-                                label: "All Atmospheres",
-                                value: "All Atmospheres",
-                              },
-                              { label: "Atmosphere: Good", value: "Good" },
-                              { label: "Atmosphere: Bad", value: "Bad" },
                             ]}
                             isDarkMode={isDarkMode}
                           />
@@ -3119,6 +3108,41 @@ export default function LeadGenWorkspace() {
                       }`}
                     />
                   </div>
+
+                  {googleServiceEmail && (
+                    <div className="space-y-1.5">
+                      <label className="block text-[10px] font-bold uppercase tracking-wider text-zinc-400">
+                        Service Account Email
+                      </label>
+                      <div
+                        className={`w-full border rounded-xl px-4 py-2 text-xs font-semibold flex items-center gap-2 select-all relative group transition-all ${
+                          isDarkMode
+                            ? "bg-zinc-850 border-zinc-700 text-zinc-200"
+                            : "bg-[#F8FAFC] border-[#E2E8F0] text-[#111827]"
+                        }`}
+                      >
+                        <span className="font-mono truncate flex-1">{googleServiceEmail}</span>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            navigator.clipboard.writeText(googleServiceEmail);
+                            showAlert("Service account email copied!", "success");
+                          }}
+                          className={`p-1.5 rounded-lg border transition-all shrink-0 hover:scale-105 active:scale-95 flex items-center justify-center ${
+                            isDarkMode
+                              ? "bg-zinc-800 border-zinc-700 text-zinc-300 hover:bg-zinc-750 hover:text-white"
+                              : "bg-white border-zinc-200 text-zinc-500 hover:bg-zinc-50 hover:text-[#00637C]"
+                          }`}
+                          title="Copy Email"
+                        >
+                          <Copy className="h-3.5 w-3.5" />
+                        </button>
+                      </div>
+                      <p className="text-[10px] text-[#00637C] dark:text-[#a5e1ef] font-bold mt-1">
+                        * In Google sheets click <span className="font-extrabold uppercase">Share</span> and then give this email as an <span className="font-extrabold uppercase">Editor</span>.
+                      </p>
+                    </div>
+                  )}
 
                   {configMessage && (
                     <div className="text-xs text-[#00637C] font-bold bg-[#e0f2f6] px-3.5 py-2 rounded-lg border border-[#00637C]/10">

@@ -236,9 +236,23 @@ export class LeadsService {
       throw new InternalServerErrorException('No GOOGLE_SHEET_ID configured in environment');
     }
 
-    const credentialsPath = path.join(this.rootDir, 'credentials.json');
-    if (!fs.existsSync(credentialsPath)) {
-      throw new NotFoundException('Google credentials file credentials.json not found in root workspace');
+    let credentialsPath = '';
+    const possiblePaths = [
+      path.join(this.rootDir, 'credentials.json'),
+      path.join(this.rootDir, 'google_credentials.json'),
+      path.resolve(process.cwd(), 'credentials.json'),
+      path.resolve(process.cwd(), 'google_credentials.json'),
+      path.resolve(process.cwd(), 'backend/credentials.json'),
+      path.resolve(process.cwd(), 'backend/google_credentials.json'),
+    ];
+    for (const p of possiblePaths) {
+      if (fs.existsSync(p)) {
+        credentialsPath = p;
+        break;
+      }
+    }
+    if (!credentialsPath) {
+      throw new NotFoundException('Google credentials file (credentials.json or google_credentials.json) not found');
     }
 
     try {
