@@ -290,11 +290,12 @@ export class LeadsService {
       const metadata = await sheets.spreadsheets.get({
         spreadsheetId: sheetId,
       });
-      const existingTitles = new Set(metadata.data.sheets.map(s => s.properties.title));
+      const sheetsMetadata = metadata.data.sheets || [];
+      const existingTitles = new Set(sheetsMetadata.map(s => s.properties?.title || '').filter(Boolean));
 
       if (leads.length === 0) {
         const defaultSheetName = 'All Leads';
-        const addRequests = [];
+        const addRequests: any[] = [];
         if (!existingTitles.has(defaultSheetName)) {
           addRequests.push({
             addSheet: {
@@ -353,7 +354,7 @@ export class LeadsService {
       });
 
       // Identify missing sheets and create them in one batch update
-      const addRequests = [];
+      const addRequests: any[] = [];
       for (const sheetName of Object.keys(groups)) {
         if (!existingTitles.has(sheetName)) {
           addRequests.push({
@@ -421,8 +422,8 @@ export class LeadsService {
       const updatedTitles = new Set([...existingTitles, ...Object.keys(groups)]);
       if (existingTitles.has('Sheet1') && !groups['Sheet1'] && updatedTitles.size > 1) {
         try {
-          const sheet1 = metadata.data.sheets.find(s => s.properties.title === 'Sheet1');
-          if (sheet1) {
+          const sheet1 = sheetsMetadata.find(s => s.properties?.title === 'Sheet1');
+          if (sheet1 && sheet1.properties?.sheetId != null) {
             await sheets.spreadsheets.batchUpdate({
               spreadsheetId: sheetId,
               requestBody: {

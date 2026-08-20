@@ -221,25 +221,35 @@ function CustomSelect({
   );
 }
 const cleanPhoneString = (phoneStr: string) => {
-  if (!phoneStr || phoneStr.toLowerCase() === "n/a" || phoneStr.toLowerCase() === "none") {
+  if (
+    !phoneStr ||
+    phoneStr.toLowerCase() === "n/a" ||
+    phoneStr.toLowerCase() === "none"
+  ) {
     return "N/A";
   }
   if (phoneStr.toLowerCase() === "directory") {
     return "Directory";
   }
-  const parts = phoneStr.split("/").map((p) => p.trim()).filter(Boolean);
+  const parts = phoneStr
+    .split("/")
+    .map((p) => p.trim())
+    .filter(Boolean);
   const seenNormalized: string[] = [];
   const uniqueParts: string[] = [];
-  
+
   for (const part of parts) {
     const digits = part.replace(/\D/g, "");
     if (!digits) continue;
-    
+
     let isDup = false;
     for (let i = 0; i < seenNormalized.length; i++) {
       const seenDigits = seenNormalized[i];
       const minLen = Math.min(digits.length, seenDigits.length);
-      if ((minLen >= 7 && digits.slice(-minLen) === seenDigits.slice(-minLen)) || digits === seenDigits) {
+      if (
+        (minLen >= 7 && digits.slice(-minLen) === seenDigits.slice(-minLen)) ||
+        digits === seenDigits
+      ) {
         isDup = true;
         if (digits.length > seenDigits.length) {
           seenNormalized[i] = digits;
@@ -248,13 +258,13 @@ const cleanPhoneString = (phoneStr: string) => {
         break;
       }
     }
-    
+
     if (!isDup) {
       seenNormalized.push(digits);
       uniqueParts.push(part);
     }
   }
-  
+
   return uniqueParts.length > 0 ? uniqueParts.join(" / ") : "N/A";
 };
 
@@ -324,7 +334,7 @@ export default function LeadGenWorkspace() {
   const showAlert = (
     message: string,
     type: "info" | "error" | "success" = "info",
-    showSheetLink?: boolean
+    showSheetLink?: boolean,
   ) => {
     setAlertState({ message, type, showSheetLink });
   };
@@ -347,7 +357,7 @@ export default function LeadGenWorkspace() {
   });
   const [isColumnsDropdownOpen, setIsColumnsDropdownOpen] = useState(false);
   const columnsDropdownRef = useRef<HTMLDivElement>(null);
-  
+
   const optionalColumnsList = [
     { key: "customerName", label: "Customer Name" },
     { key: "categoryType", label: "Category / Type" },
@@ -392,12 +402,7 @@ export default function LeadGenWorkspace() {
 
   useEffect(() => {
     setCurrentPage(1);
-  }, [
-    searchTerm,
-    filterAppearance,
-    filterAtmosphere,
-    filterPincode,
-  ]);
+  }, [searchTerm, filterAppearance, filterAtmosphere, filterPincode]);
 
   // Manual Lead Creation States
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
@@ -502,12 +507,12 @@ export default function LeadGenWorkspace() {
     }
   };
 
-  const API_BASE =
-    process.env.NEXT_PUBLIC_API_BASE ||
-    "http://localhost:8080/api";
   // const API_BASE =
   //   process.env.NEXT_PUBLIC_API_BASE ||
-  //   "https://28j0qmws-8080.inc1.devtunnels.ms/api";
+  //   "http://localhost:8080/api";
+  const API_BASE =
+    process.env.NEXT_PUBLIC_API_BASE ||
+    "https://28j0qmws-8080.inc1.devtunnels.ms/api";
 
   // Fetch leads on mount and whenever tab changes
   useEffect(() => {
@@ -554,7 +559,10 @@ export default function LeadGenWorkspace() {
   const handleAddLeadSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newSchoolName || !newLocation) {
-      showAlert("Please fill in Business Name and Target Area / Location.", "error");
+      showAlert(
+        "Please fill in Business Name and Target Area / Location.",
+        "error",
+      );
       return;
     }
     setIsAddLoading(true);
@@ -748,23 +756,23 @@ export default function LeadGenWorkspace() {
 
   const handleStartSearch = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     let hasError = false;
-    
+
     if (!areaInput.trim()) {
       setAreaError("Area is required");
       hasError = true;
     } else {
       setAreaError(null);
     }
-    
+
     if (!typeInput.trim()) {
       setTypeError("Category is required");
       hasError = true;
     } else {
       setTypeError(null);
     }
-    
+
     if (isCustomLimit) {
       const customNum = Number(customLimit);
       if (customLimit === "" || isNaN(customNum) || customNum <= 0) {
@@ -782,7 +790,7 @@ export default function LeadGenWorkspace() {
         setLimitError(null);
       }
     }
-    
+
     if (hasError) {
       return;
     }
@@ -954,12 +962,16 @@ export default function LeadGenWorkspace() {
           },
           ...prev,
         ]);
-        showAlert(data.output || "Synced successfully to Google Sheets!", "success", true);
+        showAlert(
+          data.output || "Synced successfully to Google Sheets!",
+          "success",
+          true,
+        );
       } else {
         const err = await res.json();
         showAlert(
           `Google Sheets Sync failed: ${err.message || err.detail || res.statusText || "Unknown Error"}`,
-          "error"
+          "error",
         );
       }
     } catch (e) {
@@ -972,7 +984,11 @@ export default function LeadGenWorkspace() {
         },
         ...prev,
       ]);
-      showAlert("Simulated: Synced successfully to Google Sheets!", "success", true);
+      showAlert(
+        "Simulated: Synced successfully to Google Sheets!",
+        "success",
+        true,
+      );
     }
   };
 
@@ -1014,7 +1030,9 @@ export default function LeadGenWorkspace() {
       const values = [
         lead.school_name,
         lead.website_url,
-        lead.appearance === "Directory" ? "Directory" : cleanPhoneString(lead.contact_number),
+        lead.appearance === "Directory"
+          ? "Directory"
+          : cleanPhoneString(lead.contact_number),
         lead.area_name,
         lead.address || "",
         lead.pincode || "",
@@ -1048,7 +1066,7 @@ export default function LeadGenWorkspace() {
 
     const getDownloadFileName = () => {
       const date = new Date().toISOString().split("T")[0];
-      
+
       const isUnfiltered =
         filteredLeads.length === leads.length &&
         !searchTerm.trim() &&
@@ -1063,15 +1081,23 @@ export default function LeadGenWorkspace() {
 
       // Check if all filtered leads have the same search area and category
       const uniqueAreas = new Set(
-        filteredLeads.map((l) => (l.search_area || l.area_name || "").toLowerCase().trim()).filter(Boolean)
+        filteredLeads
+          .map((l) => (l.search_area || l.area_name || "").toLowerCase().trim())
+          .filter(Boolean),
       );
       const uniqueTypes = new Set(
-        filteredLeads.map((l) => (l.institution_type || "").toLowerCase().trim()).filter(Boolean)
+        filteredLeads
+          .map((l) => (l.institution_type || "").toLowerCase().trim())
+          .filter(Boolean),
       );
 
       if (uniqueAreas.size === 1 && uniqueTypes.size === 1 && firstLead) {
-        const category = cleanFileName(formatName(firstLead.institution_type || "Leads"));
-        const place = cleanFileName(formatName(firstLead.search_area || firstLead.area_name || "General"));
+        const category = cleanFileName(
+          formatName(firstLead.institution_type || "Leads"),
+        );
+        const place = cleanFileName(
+          formatName(firstLead.search_area || firstLead.area_name || "General"),
+        );
         return `${category} - ${place} - ${date}.csv`;
       }
 
@@ -1080,8 +1106,12 @@ export default function LeadGenWorkspace() {
       }
 
       if (firstLead) {
-        const category = cleanFileName(formatName(firstLead.institution_type || "Leads"));
-        const place = cleanFileName(formatName(firstLead.search_area || firstLead.area_name || "General"));
+        const category = cleanFileName(
+          formatName(firstLead.institution_type || "Leads"),
+        );
+        const place = cleanFileName(
+          formatName(firstLead.search_area || firstLead.area_name || "General"),
+        );
         return `${category} - ${place} - Filtered - ${date}.csv`;
       }
 
@@ -1362,7 +1392,8 @@ export default function LeadGenWorkspace() {
           }`}
         >
           {(() => {
-            const dynamicColSpan = 6 + 
+            const dynamicColSpan =
+              6 +
               (visibleColumns.customerName ? 1 : 0) +
               (visibleColumns.categoryType ? 1 : 0) +
               (visibleColumns.socialMedia ? 1 : 0) +
@@ -1370,7 +1401,7 @@ export default function LeadGenWorkspace() {
               (visibleColumns.atmosphere ? 1 : 0) +
               (visibleColumns.address ? 1 : 0) +
               (visibleColumns.pincode ? 1 : 0) +
-              ((showActions && visibleColumns.stage) ? 1 : 0) +
+              (showActions && visibleColumns.stage ? 1 : 0) +
               (showActions ? 1 : 0);
 
             return (
@@ -1597,7 +1628,9 @@ export default function LeadGenWorkspace() {
                         <td
                           className={`p-3 border-r font-mono font-bold ${isDarkMode ? "border-zinc-800" : "border-[#E2E8F0]"}`}
                         >
-                          {lead.appearance === "Directory" ? "Directory" : cleanPhoneString(lead.contact_number)}
+                          {lead.appearance === "Directory"
+                            ? "Directory"
+                            : cleanPhoneString(lead.contact_number)}
                         </td>
                         {visibleColumns.address && (
                           <td
@@ -1677,7 +1710,7 @@ export default function LeadGenWorkspace() {
                                 }`}
                                 title="View Lead Details"
                               >
-                                <Eye className="h-4 w-4" /> 
+                                <Eye className="h-4 w-4" />
                               </button>
                               <button
                                 onClick={(e) => {
@@ -2566,12 +2599,24 @@ export default function LeadGenWorkspace() {
                                     : "bg-[#F8FAFC] border-zinc-200 text-[#111827] hover:bg-zinc-50 focus:border-[#00637C] focus:ring-[#00637C]"
                               }`}
                             >
-                              <span className={!limitInput ? "text-zinc-400 dark:text-zinc-500 font-semibold" : "text-[#111827] dark:text-white"}>
+                              <span
+                                className={
+                                  !limitInput
+                                    ? "text-zinc-400 dark:text-zinc-500 font-semibold"
+                                    : "text-[#111827] dark:text-white"
+                                }
+                              >
                                 {limitInput === 30 && "30 (Page 1)"}
                                 {limitInput === 60 && "60 (Pages 1 & 2)"}
                                 {limitInput === 90 && "90 (Pages 1 - 3)"}
                                 {limitInput === 150 && "150 (Deep Scan)"}
-                                {limitInput !== 30 && limitInput !== 60 && limitInput !== 90 && limitInput !== 150 && (limitInput ? `${limitInput} (Custom)` : "Limit")}
+                                {limitInput !== 30 &&
+                                  limitInput !== 60 &&
+                                  limitInput !== 90 &&
+                                  limitInput !== 150 &&
+                                  (limitInput
+                                    ? `${limitInput} (Custom)`
+                                    : "Limit")}
                               </span>
                               <svg
                                 className={`h-3 w-3 transition-transform ${isScanDepthOpen ? "rotate-180" : ""}`}
@@ -2621,7 +2666,11 @@ export default function LeadGenWorkspace() {
                                         if (option.value === "custom") {
                                           setIsCustomLimit(true);
                                           const numVal = Number(customLimit);
-                                          if (customLimit !== "" && !isNaN(numVal) && numVal > 0) {
+                                          if (
+                                            customLimit !== "" &&
+                                            !isNaN(numVal) &&
+                                            numVal > 0
+                                          ) {
                                             setLimitInput(numVal);
                                             setLimitError(null);
                                           } else {
@@ -2860,7 +2909,9 @@ export default function LeadGenWorkspace() {
                         <div className="flex items-center gap-1.5 shrink-0 flex-wrap">
                           <div className="relative" ref={columnsDropdownRef}>
                             <button
-                              onClick={() => setIsColumnsDropdownOpen(!isColumnsDropdownOpen)}
+                              onClick={() =>
+                                setIsColumnsDropdownOpen(!isColumnsDropdownOpen)
+                              }
                               className={`px-2 py-1.5 rounded-lg text-[10px] font-bold transition-all flex items-center gap-1 shadow-sm shrink-0 border hover:scale-[1.02] ${
                                 isDarkMode
                                   ? "bg-zinc-850 border-zinc-700 text-zinc-200 hover:bg-zinc-700 hover:text-white hover:border-[#00637C]"
@@ -2882,14 +2933,20 @@ export default function LeadGenWorkspace() {
                                 </div>
                                 <div className="space-y-2">
                                   {optionalColumnsList.map((col) => {
-                                    const isChecked = visibleColumns[col.key as keyof typeof visibleColumns];
+                                    const isChecked =
+                                      visibleColumns[
+                                        col.key as keyof typeof visibleColumns
+                                      ];
                                     return (
                                       <div
                                         key={col.key}
                                         onClick={() => {
                                           setVisibleColumns((prev) => ({
                                             ...prev,
-                                            [col.key]: !prev[col.key as keyof typeof prev],
+                                            [col.key]:
+                                              !prev[
+                                                col.key as keyof typeof prev
+                                              ],
                                           }));
                                         }}
                                         className="flex items-center gap-2 text-[10px] font-semibold cursor-pointer select-none py-0.5 hover:opacity-80"
@@ -2903,7 +2960,9 @@ export default function LeadGenWorkspace() {
                                                 : "bg-white border-zinc-300"
                                           }`}
                                         >
-                                          {isChecked && <Check className="h-2.5 w-2.5 stroke-[3]" />}
+                                          {isChecked && (
+                                            <Check className="h-2.5 w-2.5 stroke-[3]" />
+                                          )}
                                         </div>
                                         <span>{col.label}</span>
                                       </div>
@@ -2969,7 +3028,7 @@ export default function LeadGenWorkspace() {
                             />
                           </div>
 
-                           <CustomSelect
+                          <CustomSelect
                             value={filterAppearance}
                             onChange={setFilterAppearance}
                             options={[
@@ -3199,12 +3258,17 @@ export default function LeadGenWorkspace() {
                             : "bg-[#F8FAFC] border-[#E2E8F0] text-[#111827]"
                         }`}
                       >
-                        <span className="font-mono break-all flex-1">{googleServiceEmail}</span>
+                        <span className="font-mono break-all flex-1">
+                          {googleServiceEmail}
+                        </span>
                         <button
                           type="button"
                           onClick={() => {
                             navigator.clipboard.writeText(googleServiceEmail);
-                            showAlert("Service account email copied!", "success");
+                            showAlert(
+                              "Service account email copied!",
+                              "success",
+                            );
                           }}
                           className={`p-1.5 rounded-lg border transition-all shrink-0 hover:scale-105 active:scale-95 flex items-center justify-center ${
                             isDarkMode
@@ -3217,7 +3281,11 @@ export default function LeadGenWorkspace() {
                         </button>
                       </div>
                       <p className="text-[10px] text-[#00637C] dark:text-[#a5e1ef] font-bold mt-1">
-                        * In Google sheets click <span className="font-extrabold uppercase">Share</span> and then give this email as an <span className="font-extrabold uppercase">Editor</span>.
+                        * In Google sheets click{" "}
+                        <span className="font-extrabold uppercase">Share</span>{" "}
+                        and then give this email as an{" "}
+                        <span className="font-extrabold uppercase">Editor</span>
+                        .
                       </p>
                     </div>
                   )}
@@ -3380,7 +3448,9 @@ export default function LeadGenWorkspace() {
                         Contact Phone
                       </span>
                       <span className="text-xs font-bold mt-0.5 block font-mono">
-                        {selectedLead.appearance === "Directory" ? "Directory" : cleanPhoneString(selectedLead.contact_number)}
+                        {selectedLead.appearance === "Directory"
+                          ? "Directory"
+                          : cleanPhoneString(selectedLead.contact_number)}
                       </span>
                     </div>
                   </div>
@@ -3901,9 +3971,7 @@ export default function LeadGenWorkspace() {
                 {alertState.type === "error" && (
                   <AlertCircle className="h-5 w-5" />
                 )}
-                {alertState.type === "info" && (
-                  <Sparkles className="h-5 w-5" />
-                )}
+                {alertState.type === "info" && <Sparkles className="h-5 w-5" />}
               </div>
               <div className="space-y-1">
                 <h4 className="text-xs font-black uppercase tracking-wider text-[#00637C]">
