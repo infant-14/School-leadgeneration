@@ -474,6 +474,7 @@ export default function LeadGenWorkspace() {
             const data = await res.json();
             if (data && data.is_running === false) {
               setIsSearching(false);
+              setActiveTab("archive");
               fetchLeadsList();
             }
           }
@@ -645,6 +646,7 @@ export default function LeadGenWorkspace() {
         msg.includes("ERROR:")
       ) {
         setIsSearching(false);
+        setActiveTab("archive");
         setCurrentStep(4);
         setNotifications((prev) => [
           {
@@ -749,6 +751,7 @@ export default function LeadGenWorkspace() {
             "> Done! Leads successfully scraped, qualified, and saved to database.",
           ]);
           setIsSearching(false);
+          setActiveTab("archive");
           clearInterval(interval);
           // Add a new mock lead to demonstrate interaction
           const newLead = {
