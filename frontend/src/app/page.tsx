@@ -222,6 +222,9 @@ const cleanPhoneString = (phoneStr: string) => {
   if (!phoneStr || phoneStr.toLowerCase() === "n/a" || phoneStr.toLowerCase() === "none") {
     return "N/A";
   }
+  if (phoneStr.toLowerCase() === "directory") {
+    return "Directory";
+  }
   const parts = phoneStr.split("/").map((p) => p.trim()).filter(Boolean);
   const seenNormalized: string[] = [];
   const uniqueParts: string[] = [];
@@ -903,7 +906,7 @@ export default function LeadGenWorkspace() {
       const values = [
         lead.school_name,
         lead.website_url,
-        cleanPhoneString(lead.contact_number),
+        lead.appearance === "Directory" ? "Directory" : cleanPhoneString(lead.contact_number),
         lead.area_name,
         lead.address || "",
         lead.pincode || "",
@@ -1398,7 +1401,7 @@ export default function LeadGenWorkspace() {
                     <td
                       className={`p-3 border-r font-mono font-bold ${isDarkMode ? "border-zinc-800" : "border-[#E2E8F0]"}`}
                     >
-                      {cleanPhoneString(lead.contact_number)}
+                      {lead.appearance === "Directory" ? "Directory" : cleanPhoneString(lead.contact_number)}
                     </td>
                     <td
                       className={`p-3 border-r text-zinc-500 font-semibold break-words max-w-[250px] ${isDarkMode ? "border-zinc-800" : "border-[#E2E8F0]"}`}
@@ -3037,7 +3040,7 @@ export default function LeadGenWorkspace() {
                         Contact Phone
                       </span>
                       <span className="text-xs font-bold mt-0.5 block font-mono">
-                        {cleanPhoneString(selectedLead.contact_number)}
+                        {selectedLead.appearance === "Directory" ? "Directory" : cleanPhoneString(selectedLead.contact_number)}
                       </span>
                     </div>
                   </div>

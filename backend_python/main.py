@@ -186,7 +186,7 @@ def run_lead_pipeline(area: str, school_type: str, limit: int, output_file: str 
             enriched_lead = {
                 "school_name": school_name,
                 "website_url": website_url,
-                "contact_number": info["contact_number"],
+                "contact_number": "Directory" if appearance == "Directory" else info["contact_number"],
                 "area_name": info["area_name"],
                 "address": info["address"],
                 "pincode": info["pincode"],
