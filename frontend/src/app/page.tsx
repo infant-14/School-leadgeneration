@@ -1498,8 +1498,7 @@ export default function LeadGenWorkspace() {
                     leadsList.map((lead, idx) => (
                       <tr
                         key={lead.id}
-                        onClick={() => setSelectedLead(lead)}
-                        className={`transition-all text-[11px] font-semibold cursor-pointer border-b ${
+                        className={`transition-all text-[11px] font-semibold border-b ${
                           selectedLead?.id === lead.id
                             ? isDarkMode
                               ? "bg-[#00637C]/20 text-[#00637C] border-b border-[#00637C]"
@@ -1665,16 +1664,34 @@ export default function LeadGenWorkspace() {
                                 </select>
                               </td>
                             )}
-                            <td className="p-3 text-center">
+                            <td className="p-3 text-center flex items-center justify-center gap-1">
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setSelectedLead(lead);
+                                }}
+                                className={`p-1.5 rounded-lg transition-all hover:scale-110 shrink-0 ${
+                                  isDarkMode
+                                    ? "bg-transparent text-zinc-400 hover:text-[#00637C] hover:bg-zinc-800"
+                                    : "bg-transparent text-zinc-500 hover:text-[#00637C] hover:bg-[#e0f2f6]"
+                                }`}
+                                title="View Lead Details"
+                              >
+                                <Eye className="h-4 w-4" /> 
+                              </button>
                               <button
                                 onClick={(e) => {
                                   e.stopPropagation();
                                   handleDeleteLead(lead.id);
                                 }}
-                                className="p-1.5 rounded-lg border border-red-500/10 hover:bg-red-50 text-red-500 transition-all"
+                                className={`p-1.5 rounded-lg transition-all hover:scale-110 shrink-0 ${
+                                  isDarkMode
+                                    ? "bg-transparent text-zinc-400 hover:text-red-400 hover:bg-red-950/30"
+                                    : "bg-transparent text-zinc-550 hover:text-red-600 hover:bg-red-50"
+                                }`}
                                 title="Delete Lead"
                               >
-                                <Trash2 className="h-3.5 w-3.5" />
+                                <Trash2 className="h-4 w-4" />
                               </button>
                             </td>
                           </>
