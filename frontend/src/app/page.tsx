@@ -2664,7 +2664,7 @@ export default function LeadGenWorkspace() {
                       <button
                         onClick={() => {
                           setAreaInput("Tambaram");
-                          setTypeInput("matriculation schools");
+                          setTypeInput("Schools");
                         }}
                         className={`p-3.5 border rounded-xl text-left transition-all hover:-translate-y-0.5 hover:shadow-md flex items-start gap-3 group ${
                           isDarkMode
@@ -2676,10 +2676,10 @@ export default function LeadGenWorkspace() {
                           <MapPin className="h-4 w-4" />
                         </div>
                         <div>
-                          <span className="text-xs font-bold block text-zinc-800 dark:text-zinc-200 group-hover:text-[#00637C] transition-colors">
-                            Matriculation
+                          <span className="text-xs font-black block text-[#111827] dark:text-zinc-100 group-hover:text-[#00637C] transition-colors">
+                            Schools
                           </span>
-                          <span className="text-[9px] text-zinc-400 font-semibold block mt-0.5">
+                          <span className="text-[10px] text-zinc-400 font-semibold block mt-0.5">
                             Tambaram, Chennai
                           </span>
                         </div>
@@ -2688,8 +2688,8 @@ export default function LeadGenWorkspace() {
                       {/* Card 2 */}
                       <button
                         onClick={() => {
-                          setAreaInput("Adyar");
-                          setTypeInput("CBSE schools");
+                          setAreaInput("Srirangam");
+                          setTypeInput("Super Markets");
                         }}
                         className={`p-3.5 border rounded-xl text-left transition-all hover:-translate-y-0.5 hover:shadow-md flex items-start gap-3 group ${
                           isDarkMode
@@ -2701,11 +2701,11 @@ export default function LeadGenWorkspace() {
                           <Sparkles className="h-4 w-4" />
                         </div>
                         <div>
-                          <span className="text-xs font-bold block text-zinc-800 dark:text-zinc-200 group-hover:text-[#00637C] transition-colors">
-                            CBSE
+                          <span className="text-xs font-black block text-[#111827] dark:text-zinc-100 group-hover:text-[#00637C] transition-colors">
+                            Super Markets
                           </span>
-                          <span className="text-[9px] text-zinc-400 font-semibold block mt-0.5">
-                            Adyar, Chennai
+                          <span className="text-[10px] text-zinc-400 font-semibold block mt-0.5">
+                            Srirangam, Trichy
                           </span>
                         </div>
                       </button>
@@ -2714,7 +2714,7 @@ export default function LeadGenWorkspace() {
                       <button
                         onClick={() => {
                           setAreaInput("ECR");
-                          setTypeInput("international schools");
+                          setTypeInput("Hotels");
                         }}
                         className={`p-3.5 border rounded-xl text-left transition-all hover:-translate-y-0.5 hover:shadow-md flex items-start gap-3 group ${
                           isDarkMode
@@ -2726,10 +2726,10 @@ export default function LeadGenWorkspace() {
                           <Globe className="h-4 w-4" />
                         </div>
                         <div>
-                          <span className="text-xs font-bold block text-zinc-800 dark:text-zinc-200 group-hover:text-[#00637C] transition-colors">
-                            International
+                          <span className="text-xs font-black block text-[#111827] dark:text-zinc-100 group-hover:text-[#00637C] transition-colors">
+                            Hotels
                           </span>
-                          <span className="text-[9px] text-zinc-400 font-semibold block mt-0.5">
+                          <span className="text-[10px] text-zinc-400 font-semibold block mt-0.5">
                             ECR, Chennai
                           </span>
                         </div>
