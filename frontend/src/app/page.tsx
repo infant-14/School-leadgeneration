@@ -1034,10 +1034,61 @@ export default function LeadGenWorkspace() {
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.setAttribute("href", url);
-    link.setAttribute(
-      "download",
-      `business_leads_${new Date().toISOString().split("T")[0]}.csv`,
-    );
+    const firstLead = filteredLeads[0];
+    const formatName = (str: string) => {
+      if (!str) return "";
+      return str
+        .split(/\s+/)
+        .map((w) => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase())
+        .join(" ");
+    };
+    const cleanFileName = (str: string) => {
+      return str.replace(/[\\/:*?"<>|]/g, "").trim();
+    };
+
+    const getDownloadFileName = () => {
+      const date = new Date().toISOString().split("T")[0];
+      
+      const isUnfiltered =
+        filteredLeads.length === leads.length &&
+        !searchTerm.trim() &&
+        filterStatus === "All Stages" &&
+        filterAtmosphere === "All Atmospheres" &&
+        filterAppearance === "All Appearances" &&
+        filterPincode === "All Pincodes";
+
+      if (isUnfiltered) {
+        return `All Leads - ${date}.csv`;
+      }
+
+      // Check if all filtered leads have the same search area and category
+      const uniqueAreas = new Set(
+        filteredLeads.map((l) => (l.search_area || l.area_name || "").toLowerCase().trim()).filter(Boolean)
+      );
+      const uniqueTypes = new Set(
+        filteredLeads.map((l) => (l.institution_type || "").toLowerCase().trim()).filter(Boolean)
+      );
+
+      if (uniqueAreas.size === 1 && uniqueTypes.size === 1 && firstLead) {
+        const category = cleanFileName(formatName(firstLead.institution_type || "Leads"));
+        const place = cleanFileName(formatName(firstLead.search_area || firstLead.area_name || "General"));
+        return `${category} - ${place} - ${date}.csv`;
+      }
+
+      if (searchTerm.trim()) {
+        return `${cleanFileName(formatName(searchTerm))} - ${date}.csv`;
+      }
+
+      if (firstLead) {
+        const category = cleanFileName(formatName(firstLead.institution_type || "Leads"));
+        const place = cleanFileName(formatName(firstLead.search_area || firstLead.area_name || "General"));
+        return `${category} - ${place} - Filtered - ${date}.csv`;
+      }
+
+      return `Filtered Leads - ${date}.csv`;
+    };
+
+    link.setAttribute("download", getDownloadFileName());
     link.style.visibility = "hidden";
     document.body.appendChild(link);
     link.click();
